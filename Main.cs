@@ -27,6 +27,10 @@ namespace ED_Systems_v2
         double fcy = 0; //fc current y
         double fcz = 0; //fc current z
         ulong oldFCSysAddr = 0;
+        string oldFCSysName = "";
+        string oldFCSysBody = "";
+        bool notVisited = true;
+
         private bool loadingData;
         DataTable filterRaw;
         DataTable filterMinerals;
@@ -98,6 +102,7 @@ namespace ED_Systems_v2
         CarrierBankTransfer carrierBankTransfer = new CarrierBankTransfer();
         CarrierJumpRequest carrierJumpRequest = new CarrierJumpRequest();
         CargoTransfer cargoTransfer = new CargoTransfer();
+        CarrierJumpCancelled carrierJumpCancelled = new CarrierJumpCancelled();
 
         public Main()
         {
@@ -298,14 +303,15 @@ namespace ED_Systems_v2
             {
                 cbxCarrier.SelectedItem = null;
             }
+            notVisited = Properties.Settings.Default.NotVisited;
 
-            
         }
         private void Main_FormClosed(object sender, FormClosedEventArgs e)
         {
             Properties.Settings.Default.BkgRead = chkEnableBkgRead.Checked;
             Properties.Settings.Default.BkgLastLine = lastReadLine;
             Properties.Settings.Default.LastLog = toolStripStatusLastLog.Text;
+            Properties.Settings.Default.NotVisited = notVisited;
             Properties.Settings.Default.Save();
         }
         private void FillMiningFilter(DataTable dt)
@@ -439,6 +445,13 @@ namespace ED_Systems_v2
                 Properties.Settings.Default.LastKey = fsdJump.SystemAddress;
                 Properties.Settings.Default.LastSystemName = fsdJump.StarSystem;
                 Properties.Settings.Default.Save();
+                if(fsdJump.SystemAddress == Properties.Settings.Default.LastKeyFC)
+                {
+                    notVisited = false;
+                    fcx = cx;
+                    fcy = cy;
+                    fcz = cz;
+                }
             }
             //"event":"CarrierJump"
             if (line.IndexOf("\"event\":\"CarrierJump\"") >= 0)
@@ -1000,28 +1013,44 @@ namespace ED_Systems_v2
             if (line.IndexOf("\"event\":\"CarrierJumpRequest\"") >= 0)
             {
                 carrierJumpRequest = JsonConvert.DeserializeObject<CarrierJumpRequest>(line);
-                crb.UpdateCurrent(carrierJumpRequest.CarrierID, carrierJumpRequest.SystemName, carrierJumpRequest.Body);
                 oldFCSysAddr = Properties.Settings.Default.LastKeyFC;
                 dt = lb.SelectSystemByKey(carrierJumpRequest.SystemAddress);
                 if (dt.Rows.Count != 0)
                 {
+                    notVisited = false;
                     fcx = Convert.ToDouble(dt.Rows[0]["X"]);
                     fcy = Convert.ToDouble(dt.Rows[0]["Y"]);
                     fcz = Convert.ToDouble(dt.Rows[0]["Z"]);
                     Properties.Settings.Default.LastKeyFC = carrierJumpRequest.SystemAddress;
                     Properties.Settings.Default.Save();
                 }
+                else
+                {
+                    notVisited = true;
+                }
+                dt = crb.SelectCarrier(carrierJumpRequest.CarrierID);
+                oldFCSysName = dt.Rows[0]["system"].ToString();
+                oldFCSysBody = dt.Rows[0]["body"].ToString();
+                crb.UpdateCurrent(carrierJumpRequest.CarrierID, carrierJumpRequest.SystemName, carrierJumpRequest.Body);
+    
             }
             //"event":"CarrierJumpCancelled"
             if (line.IndexOf("\"event\":\"CarrierJumpCancelled\"") >= 0)
             {
+                carrierJumpCancelled = JsonConvert.DeserializeObject<CarrierJumpCancelled>(line);
                 dt = lb.SelectSystemByKey(oldFCSysAddr);
                 if (dt.Rows.Count != 0)
                 {
+                    notVisited = false;
                     fcx = Convert.ToDouble(dt.Rows[0]["X"]);
                     fcy = Convert.ToDouble(dt.Rows[0]["Y"]);
                     fcz = Convert.ToDouble(dt.Rows[0]["Z"]);
                 }
+                else
+                {
+                    notVisited = true;
+                }
+                crb.UpdateCurrent(carrierJumpCancelled.CarrierID, oldFCSysName, oldFCSysBody);
                 Properties.Settings.Default.LastKeyFC = oldFCSysAddr;
                 Properties.Settings.Default.Save();
             }
@@ -1096,12 +1125,19 @@ namespace ED_Systems_v2
                 dy = Convert.ToDouble(row["Y"]) - cy;
                 dz = Convert.ToDouble(row["Z"]) - cz;
                 row["Distance"] = Math.Round(Math.Sqrt(dx * dx + dy * dy + dz * dz), 2);
-                if (Properties.Settings.Default.LastKeyFC != 0)
+                if (notVisited)
                 {
-                    dx = Convert.ToDouble(row["X"]) - fcx;
-                    dy = Convert.ToDouble(row["Y"]) - fcy;
-                    dz = Convert.ToDouble(row["Z"]) - fcz;
-                    row["FCDistance"] = Math.Round(Math.Sqrt(dx * dx + dy * dy + dz * dz), 2);
+                    row["FCDistance"] = 0;
+                }
+                else
+                {
+                    if (Properties.Settings.Default.LastKeyFC != 0)
+                    {
+                        dx = Convert.ToDouble(row["X"]) - fcx;
+                        dy = Convert.ToDouble(row["Y"]) - fcy;
+                        dz = Convert.ToDouble(row["Z"]) - fcz;
+                        row["FCDistance"] = Math.Round(Math.Sqrt(dx * dx + dy * dy + dz * dz), 2);
+                    }
                 }
             }
             dgvSystems.DataSource = dbt.systems;
@@ -1116,14 +1152,21 @@ namespace ED_Systems_v2
             double dfs = Math.Round(Math.Sqrt(cx * cx + cy * cy + cz * cz), 2);
             
             lblDistance.Text = "Текущие расстояния: от Sol " + dfs.ToString() + " св.л.; ";
-            if (Properties.Settings.Default.LastKeyFC != 0)
+            if (notVisited)
             {
-                //distance from carrier
-                dx = cx - fcx;
-                dy = cy - fcy;
-                dz = cz - fcz;
-                double dfc = Math.Round(Math.Sqrt(dx * dx + dy * dy + dz * dz), 2);
-                lblDistance.Text = lblDistance.Text + "от носителя " + dfc.ToString() + " св.л.; ";
+                lblDistance.Text = lblDistance.Text + "от носителя (неизвестно); ";
+            }
+            else
+            {
+                if (Properties.Settings.Default.LastKeyFC != 0)
+                {
+                    //distance from carrier
+                    dx = cx - fcx;
+                    dy = cy - fcy;
+                    dz = cz - fcz;
+                    double dfc = Math.Round(Math.Sqrt(dx * dx + dy * dy + dz * dz), 2);
+                    lblDistance.Text = lblDistance.Text + "от носителя " + dfc.ToString() + " св.л.; ";
+                }
             }
             //distance from galaxy center
             dx = cx - 25.21875;
@@ -1459,6 +1502,10 @@ namespace ED_Systems_v2
             {
                 body = body.Replace(dt.Rows[0]["system"].ToString(), "").Trim();
                 lblCurrentCurrierSystem.Text = lblCurrentCurrierSystem.Text + " (Планета: " + body + ")";
+            }
+            if (notVisited)
+            {
+                lblCurrentCurrierSystem.Text = lblCurrentCurrierSystem.Text + " не посещалась";
             }
 
             dt = crb.SelectFinance(id);
