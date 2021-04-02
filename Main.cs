@@ -215,7 +215,8 @@ namespace ED_Systems_v2
             toolStripStatusLastLog.Text = Properties.Settings.Default.LastLog;
             lblSystems.Text = "Систем 0 Радиус поиска " +
                 Properties.Settings.Default.MaxRadius.ToString() + " св.л.";
-
+            notVisited = Properties.Settings.Default.NotVisited;
+            carrierID = Properties.Settings.Default.CarrierID;
 
             filterRaw = lb.SelectDistinctRaw();
             if (LocalBaseExeption()) return;
@@ -303,7 +304,7 @@ namespace ED_Systems_v2
             {
                 cbxCarrier.SelectedItem = null;
             }
-            notVisited = Properties.Settings.Default.NotVisited;
+            
 
         }
         private void Main_FormClosed(object sender, FormClosedEventArgs e)
@@ -312,6 +313,7 @@ namespace ED_Systems_v2
             Properties.Settings.Default.BkgLastLine = lastReadLine;
             Properties.Settings.Default.LastLog = toolStripStatusLastLog.Text;
             Properties.Settings.Default.NotVisited = notVisited;
+            Properties.Settings.Default.CarrierID = carrierID;
             Properties.Settings.Default.Save();
         }
         private void FillMiningFilter(DataTable dt)
@@ -1021,13 +1023,13 @@ namespace ED_Systems_v2
                     fcx = Convert.ToDouble(dt.Rows[0]["X"]);
                     fcy = Convert.ToDouble(dt.Rows[0]["Y"]);
                     fcz = Convert.ToDouble(dt.Rows[0]["Z"]);
-                    Properties.Settings.Default.LastKeyFC = carrierJumpRequest.SystemAddress;
-                    Properties.Settings.Default.Save();
                 }
                 else
                 {
                     notVisited = true;
                 }
+                Properties.Settings.Default.LastKeyFC = carrierJumpRequest.SystemAddress;
+                Properties.Settings.Default.Save();
                 dt = crb.SelectCarrier(carrierJumpRequest.CarrierID);
                 oldFCSysName = dt.Rows[0]["system"].ToString();
                 oldFCSysBody = dt.Rows[0]["body"].ToString();
@@ -1207,9 +1209,6 @@ namespace ED_Systems_v2
                 if (LocalBaseExeption()) return;
             }
 
-            
-
-
             if (dbt.bodies.Rows.Count == 0)
             {
                 dbt.bodies.Rows.Clear();
@@ -1222,7 +1221,10 @@ namespace ED_Systems_v2
                 dgvRings.DataSource = dbt.rings;
                 dbt.minerals.Rows.Clear();
                 dgvMinerals.DataSource = dbt.minerals;
-                lblPlanets.Text = "В системе " + dgvSystems.CurrentRow.Cells["dgvsName"].Value.ToString() + " — 0 тел";
+                if (dgvSystems.CurrentRow == null)
+                    lblPlanets.Text = "";
+                else
+                    lblPlanets.Text = "В системе " + dgvSystems.CurrentRow.Cells["dgvsName"].Value.ToString() + " — 0 тел";
                 return;
             }
             dgvBodies.DataSource = dbt.bodies;
@@ -1412,21 +1414,22 @@ namespace ED_Systems_v2
                     if (foundRow == null) continue;
                     row["count"] = foundRow["count"];
                 }
+                dgvCmdrRaw.Refresh();
                 foreach (DataRow row in dbt.cencoded.Rows)
                 {
                     foundRow = dt.AsEnumerable().SingleOrDefault(r => r.Field<string>("key") == row["key"].ToString());
                     if (foundRow == null) continue;
                     row["count"] = foundRow["count"];
                 }
+                dgvCmdrEncoded.Refresh();
                 foreach (DataRow row in dbt.cmanuf.Rows)
                 {
                     foundRow = dt.AsEnumerable().SingleOrDefault(r => r.Field<string>("key") == row["key"].ToString());
                     if (foundRow == null) continue;
                     row["count"] = foundRow["count"];
                 }
-                
+                dgvCmdrManuf.Refresh();
             }
-
         }
         //reputation
         private void Reputation(int value, PictureBox pbx)
@@ -1479,7 +1482,6 @@ namespace ED_Systems_v2
                 new SolidBrush(Color.Black),
                 tx, ty);
         }
-
         //carrier
         private void LoadCarrierData()
         {
@@ -1648,7 +1650,6 @@ namespace ED_Systems_v2
             dgvCargo.DataSource = dt;
 
         }
-        
         private void BkgReadLog(string path)
         {
             toolStripStatusLastLog.BackColor = Color.Red;
@@ -1697,6 +1698,7 @@ namespace ED_Systems_v2
             toolStripStatusLastLog.BackColor = Color.Green;
             toolStripStatusLastLog.ForeColor = Color.White;
         }
+
 
         //events
         private void LogFolderToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1963,6 +1965,20 @@ namespace ED_Systems_v2
         {
             (dgvSystems.DataSource as DataTable).DefaultView.RowFilter =
                     String.Format("Name like '%{0}%'", tbxSystemsFilter.Text);
+            string selection = "";
+            if ((dgvSystems.DataSource as DataTable).DefaultView.Count == 0)
+            {
+                LoadBodies(0, selection);
+            }
+            else
+            {
+                UInt64 SKey = Convert.ToUInt64((dgvSystems.DataSource as DataTable).DefaultView[0][0]);
+                if (cbxMiningFilter.SelectedItem != null)
+                {
+                    selection = cbxMiningFilter.SelectedItem.ToString();
+                }
+                LoadBodies(SKey, selection);
+            }
         }
 
         private void btnSystemsFilterClear_Click(object sender, EventArgs e)
@@ -2054,44 +2070,6 @@ namespace ED_Systems_v2
             Map.Show();
         }
 
-        private void tabPageRaw_Enter(object sender, EventArgs e)
-        {
-            //раскраскa
-            float prc = 0;
-            foreach (DataGridViewRow row in dgvMinerals.Rows)
-            {
-                prc = Convert.ToSingle(row.Cells["dgvcCmdrRawCount"]) /
-                    Convert.ToSingle(row.Cells["dgvcCmdrRawCapacity"]);
-                if (prc < 0.25f)
-                {
-                    row.DefaultCellStyle.BackColor = Color.Red;
-                    row.DefaultCellStyle.ForeColor = Color.White;
-                }
-                else if (prc < 0.5f)
-                {
-                    row.DefaultCellStyle.BackColor = Color.Orange;
-                    row.DefaultCellStyle.ForeColor = Color.Black;
-                }
-                else if (prc < 0.75f)
-                {
-                    row.DefaultCellStyle.BackColor = Color.Yellow;
-                    row.DefaultCellStyle.ForeColor = Color.Black;
-                }
-                else if (prc < 1.0f)
-                {
-                    row.DefaultCellStyle.BackColor = Color.YellowGreen;
-                    row.DefaultCellStyle.ForeColor = Color.Black;
-                }
-                else
-                {
-                    row.DefaultCellStyle.BackColor = Color.Green;
-                    row.DefaultCellStyle.ForeColor = Color.White;
-                }
-
-            }
-
-        }
-
         private void cbxCarrier_SelectedIndexChanged(object sender, EventArgs e)
         {
             LoadCarrierData();
@@ -2113,8 +2091,6 @@ namespace ED_Systems_v2
                 CarrierBaseExeption();
             }
         }
-
-        
 
         private void chkEnableBkgRead_CheckedChanged(object sender, EventArgs e)
         {
@@ -2150,6 +2126,108 @@ namespace ED_Systems_v2
             {
                 if (readingLog) return;
                 BkgReadLog(e.FullPath);
+            }
+        }
+
+        private void dgvCmdrRaw_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e)
+        {
+            float prc = 0;
+            float cou = Convert.ToSingle(dgvCmdrRaw.Rows[e.RowIndex].Cells["dgvcCmdrRawCount"].Value);
+            float cap = Convert.ToSingle(dgvCmdrRaw.Rows[e.RowIndex].Cells["dgvcCmdrRawCapacity"].Value);
+
+            prc = cou / cap;
+            if (prc < 0.25f)
+            {
+                dgvCmdrRaw.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.Tomato;
+                dgvCmdrRaw.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.White;
+            }
+            else if (prc < 0.5f)
+            {
+                dgvCmdrRaw.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.Orange;
+                dgvCmdrRaw.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Black;
+            }
+            else if (prc < 0.75f)
+            {
+                dgvCmdrRaw.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.Yellow;
+                dgvCmdrRaw.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Black;
+            }
+            else if (prc < 1.0f)
+            {
+                dgvCmdrRaw.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.YellowGreen;
+                dgvCmdrRaw.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Black;
+            }
+            else
+            {
+                dgvCmdrRaw.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.Green;
+                dgvCmdrRaw.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.White;
+            }
+        }
+
+        private void dgvCmdrEncoded_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e)
+        {
+            float prc = 0;
+            float cou = Convert.ToSingle(dgvCmdrEncoded.Rows[e.RowIndex].Cells["dgvcCmdrEncodedCount"].Value);
+            float cap = Convert.ToSingle(dgvCmdrEncoded.Rows[e.RowIndex].Cells["dgvcCmdrEncodedCapasity"].Value);
+
+            prc = cou / cap;
+            if (prc < 0.25f)
+            {
+                dgvCmdrEncoded.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.Tomato;
+                dgvCmdrEncoded.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.White;
+            }
+            else if (prc < 0.5f)
+            {
+                dgvCmdrEncoded.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.Orange;
+                dgvCmdrEncoded.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Black;
+            }
+            else if (prc < 0.75f)
+            {
+                dgvCmdrEncoded.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.Yellow;
+                dgvCmdrEncoded.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Black;
+            }
+            else if (prc < 1.0f)
+            {
+                dgvCmdrEncoded.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.YellowGreen;
+                dgvCmdrEncoded.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Black;
+            }
+            else
+            {
+                dgvCmdrEncoded.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.Green;
+                dgvCmdrEncoded.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.White;
+            }
+        }
+
+        private void dgvCmdrManuf_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e)
+        {
+            float prc = 0;
+            float cou = Convert.ToSingle(dgvCmdrManuf.Rows[e.RowIndex].Cells["dgvcManufCount"].Value);
+            float cap = Convert.ToSingle(dgvCmdrManuf.Rows[e.RowIndex].Cells["dgvcManufCapasity"].Value);
+
+            prc = cou / cap;
+            if (prc < 0.25f)
+            {
+                dgvCmdrManuf.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.Tomato;
+                dgvCmdrManuf.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.White;
+            }
+            else if (prc < 0.5f)
+            {
+                dgvCmdrManuf.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.Orange;
+                dgvCmdrManuf.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Black;
+            }
+            else if (prc < 0.75f)
+            {
+                dgvCmdrManuf.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.Yellow;
+                dgvCmdrManuf.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Black;
+            }
+            else if (prc < 1.0f)
+            {
+                dgvCmdrManuf.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.YellowGreen;
+                dgvCmdrManuf.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Black;
+            }
+            else
+            {
+                dgvCmdrManuf.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.Green;
+                dgvCmdrManuf.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.White;
             }
         }
     }
