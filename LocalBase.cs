@@ -399,6 +399,29 @@ namespace ED_Systems_v2
                 exeption = ex.Message + Environment.NewLine + cmd.CommandText;
             }
         }
+        public void InsertSystem(Location row)
+        {
+            exeption = "";
+            cmd.CommandText = @"INSERT INTO Systems (SKey, Name, X, Y, Z, timestamp)
+                                VALUES (@SKey, @Name, @X, @Y, @Z, @timestamp)";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@SKey", DbType.UInt64).Value = row.SystemAddress;
+            cmd.Parameters.Add("@Name", DbType.String).Value = row.StarSystem;
+            cmd.Parameters.Add("@X", DbType.Double).Value = row.StarPos[0];
+            cmd.Parameters.Add("@Y", DbType.Double).Value = row.StarPos[1];
+            cmd.Parameters.Add("@Z", DbType.Double).Value = row.StarPos[2];
+            cmd.Parameters.Add("@timestamp", DbType.DateTime).Value = row.timestamp;
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
+
+
         public void UpdateSystem(FSDJump row)
         {
             exeption = "";
@@ -422,6 +445,28 @@ namespace ED_Systems_v2
             }
         }
         public void UpdateSystem(CarrierJump row)
+        {
+            exeption = "";
+            cmd.CommandText = @"UPDATE Systems
+                                SET Name = @Name, X = @X, Y = @Y, Z = @Z, timestamp = @timestamp
+                                WHERE SKey = @SKey";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@SKey", DbType.UInt64).Value = row.SystemAddress;
+            cmd.Parameters.Add("@Name", DbType.String).Value = row.StarSystem;
+            cmd.Parameters.Add("@X", DbType.Double).Value = row.StarPos[0];
+            cmd.Parameters.Add("@Y", DbType.Double).Value = row.StarPos[1];
+            cmd.Parameters.Add("@Z", DbType.Double).Value = row.StarPos[2];
+            cmd.Parameters.Add("@timestamp", DbType.DateTime).Value = row.timestamp;
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
+        public void UpdateSystem(Location row)
         {
             exeption = "";
             cmd.CommandText = @"UPDATE Systems

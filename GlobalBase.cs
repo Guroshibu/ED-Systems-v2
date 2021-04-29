@@ -18,14 +18,14 @@ namespace ED_Systems_v2
         private DataTable dt;
 
         public string exeption = "";
-        public GlobalBase()
+        public GlobalBase(string host, string db, string port, string user, string pwd)
         {
             // Connection String.
-            string connString = "Server=" + Properties.Settings.Default.MySqlHost +
-                                ";Database=" + Properties.Settings.Default.MySqlDb +
-                                ";port=" + Properties.Settings.Default.MySqlPort +
-                                ";User Id=" + Properties.Settings.Default.MySqlUser +
-                                ";password=" + Properties.Settings.Default.MySqlPwd;
+            string connString = "Server=" + host +
+                                ";Database=" + db +
+                                ";port=" + port+
+                                ";User Id=" + user +
+                                ";password=" + pwd;
             try
             {
                 conn = new MySqlConnection(connString);
@@ -124,6 +124,57 @@ namespace ED_Systems_v2
             exeption = "";
             cmd.CommandText = @"INSERT INTO Systems (SKey, Name, X, Y, Z)
                                 VALUES (@SKey, @Name, @X, @Y, @Z)";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@SKey", MySqlDbType.UInt64).Value = row.SystemAddress;
+            cmd.Parameters.Add("@Name", MySqlDbType.String).Value = row.StarSystem;
+            cmd.Parameters.Add("@X", MySqlDbType.Double).Value = row.StarPos[0];
+            cmd.Parameters.Add("@Y", MySqlDbType.Double).Value = row.StarPos[1];
+            cmd.Parameters.Add("@Z", MySqlDbType.Double).Value = row.StarPos[2];
+            //transaction
+            tr = conn.BeginTransaction();
+            cmd.Transaction = tr;
+            try
+            {
+                cmd.ExecuteNonQuery();
+                tr.Commit();
+            }
+            catch (MySqlException ex)
+            {
+                tr.Rollback();
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
+        public void InsertSystem(Location row)
+        {
+            exeption = "";
+            cmd.CommandText = @"INSERT INTO Systems (SKey, Name, X, Y, Z)
+                                VALUES (@SKey, @Name, @X, @Y, @Z)";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@SKey", MySqlDbType.UInt64).Value = row.SystemAddress;
+            cmd.Parameters.Add("@Name", MySqlDbType.String).Value = row.StarSystem;
+            cmd.Parameters.Add("@X", MySqlDbType.Double).Value = row.StarPos[0];
+            cmd.Parameters.Add("@Y", MySqlDbType.Double).Value = row.StarPos[1];
+            cmd.Parameters.Add("@Z", MySqlDbType.Double).Value = row.StarPos[2];
+            //transaction
+            tr = conn.BeginTransaction();
+            cmd.Transaction = tr;
+            try
+            {
+                cmd.ExecuteNonQuery();
+                tr.Commit();
+            }
+            catch (MySqlException ex)
+            {
+                tr.Rollback();
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
+        public void UpdateSystem(Location row)
+        {
+            exeption = "";
+            cmd.CommandText = @"UPDATE Systems
+                                SET Name = @Name, X = @X, Y = @Y, Z = @Z
+                                WHERE SKey = @SKey";
             cmd.Parameters.Clear();
             cmd.Parameters.Add("@SKey", MySqlDbType.UInt64).Value = row.SystemAddress;
             cmd.Parameters.Add("@Name", MySqlDbType.String).Value = row.StarSystem;

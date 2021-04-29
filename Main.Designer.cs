@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
@@ -83,9 +84,11 @@
             this.toolStripStatusCurrent = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLastLog = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusDonate = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLogPath = new System.Windows.Forms.ToolStripStatusLabel();
             this.tabControl = new System.Windows.Forms.TabControl();
             this.tabSyatems = new System.Windows.Forms.TabPage();
             this.pnlControls = new System.Windows.Forms.Panel();
+            this.lblDistance = new System.Windows.Forms.Label();
             this.gbxMiningFilter = new System.Windows.Forms.GroupBox();
             this.rbBodies = new System.Windows.Forms.RadioButton();
             this.rbRings = new System.Windows.Forms.RadioButton();
@@ -280,12 +283,26 @@
             this.dgvcManufCount = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.tabPageStars = new System.Windows.Forms.TabPage();
             this.webBrowserStars = new System.Windows.Forms.WebBrowser();
+            this.tabPageScreenshot = new System.Windows.Forms.TabPage();
+            this.pbxScreenshot = new System.Windows.Forms.PictureBox();
+            this.lblScreenName = new System.Windows.Forms.Label();
+            this.btnScreenTo = new System.Windows.Forms.Button();
+            this.btnScreenFrom = new System.Windows.Forms.Button();
+            this.tbxScreenTo = new System.Windows.Forms.TextBox();
+            this.lblScreenTo = new System.Windows.Forms.Label();
+            this.tbxScreenFrom = new System.Windows.Forms.TextBox();
+            this.lblScreenFrom = new System.Windows.Forms.Label();
             this.tabPageBrgRead = new System.Windows.Forms.TabPage();
             this.tbxBkgReadLog = new System.Windows.Forms.TextBox();
             this.chkEnableBkgRead = new System.Windows.Forms.CheckBox();
+            this.tabPageBackup = new System.Windows.Forms.TabPage();
+            this.tbxBackupLog = new System.Windows.Forms.TextBox();
+            this.btnBackup = new System.Windows.Forms.Button();
+            this.btnBackupPath = new System.Windows.Forms.Button();
+            this.lblBackup = new System.Windows.Forms.Label();
+            this.tbxBackup = new System.Windows.Forms.TextBox();
             this.fswDir = new System.IO.FileSystemWatcher();
-            this.fswFile = new System.IO.FileSystemWatcher();
-            this.lblDistance = new System.Windows.Forms.Label();
+            this.readLogTimer = new System.Windows.Forms.Timer(this.components);
             this.menuStrip.SuspendLayout();
             this.statusStrip.SuspendLayout();
             this.tabControl.SuspendLayout();
@@ -348,9 +365,11 @@
             this.tabPageManuf.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvCmdrManuf)).BeginInit();
             this.tabPageStars.SuspendLayout();
+            this.tabPageScreenshot.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbxScreenshot)).BeginInit();
             this.tabPageBrgRead.SuspendLayout();
+            this.tabPageBackup.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.fswDir)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.fswFile)).BeginInit();
             this.SuspendLayout();
             // 
             // menuStrip
@@ -418,17 +437,18 @@
             this.toolStripProgressBar,
             this.toolStripStatusCurrent,
             this.toolStripStatusLastLog,
-            this.toolStripStatusDonate});
-            this.statusStrip.Location = new System.Drawing.Point(0, 705);
+            this.toolStripStatusDonate,
+            this.toolStripStatusLogPath});
+            this.statusStrip.Location = new System.Drawing.Point(0, 704);
             this.statusStrip.Name = "statusStrip";
-            this.statusStrip.Size = new System.Drawing.Size(1350, 25);
+            this.statusStrip.Size = new System.Drawing.Size(1350, 26);
             this.statusStrip.TabIndex = 2;
             this.statusStrip.Text = "statusStrip1";
             // 
             // toolStripProgressBar
             // 
             this.toolStripProgressBar.Name = "toolStripProgressBar";
-            this.toolStripProgressBar.Size = new System.Drawing.Size(300, 19);
+            this.toolStripProgressBar.Size = new System.Drawing.Size(300, 20);
             this.toolStripProgressBar.Step = 1;
             // 
             // toolStripStatusCurrent
@@ -440,7 +460,7 @@
             this.toolStripStatusCurrent.BorderStyle = System.Windows.Forms.Border3DStyle.Sunken;
             this.toolStripStatusCurrent.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.toolStripStatusCurrent.Name = "toolStripStatusCurrent";
-            this.toolStripStatusCurrent.Size = new System.Drawing.Size(300, 20);
+            this.toolStripStatusCurrent.Size = new System.Drawing.Size(300, 21);
             this.toolStripStatusCurrent.Text = "Current system";
             // 
             // toolStripStatusLastLog
@@ -451,18 +471,28 @@
             | System.Windows.Forms.ToolStripStatusLabelBorderSides.Bottom)));
             this.toolStripStatusLastLog.BorderStyle = System.Windows.Forms.Border3DStyle.Sunken;
             this.toolStripStatusLastLog.Name = "toolStripStatusLastLog";
-            this.toolStripStatusLastLog.Size = new System.Drawing.Size(300, 20);
+            this.toolStripStatusLastLog.Size = new System.Drawing.Size(300, 21);
             this.toolStripStatusLastLog.Text = "Last log";
             // 
             // toolStripStatusDonate
             // 
             this.toolStripStatusDonate.IsLink = true;
             this.toolStripStatusDonate.Name = "toolStripStatusDonate";
-            this.toolStripStatusDonate.Size = new System.Drawing.Size(50, 20);
+            this.toolStripStatusDonate.Size = new System.Drawing.Size(50, 21);
             this.toolStripStatusDonate.Text = "Donate";
             this.toolStripStatusDonate.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.toolStripStatusDonate.VisitedLinkColor = System.Drawing.Color.Blue;
             this.toolStripStatusDonate.Click += new System.EventHandler(this.toolStripStatusDonate_Click);
+            // 
+            // toolStripStatusLogPath
+            // 
+            this.toolStripStatusLogPath.BorderSides = ((System.Windows.Forms.ToolStripStatusLabelBorderSides)((((System.Windows.Forms.ToolStripStatusLabelBorderSides.Left | System.Windows.Forms.ToolStripStatusLabelBorderSides.Top) 
+            | System.Windows.Forms.ToolStripStatusLabelBorderSides.Right) 
+            | System.Windows.Forms.ToolStripStatusLabelBorderSides.Bottom)));
+            this.toolStripStatusLogPath.BorderStyle = System.Windows.Forms.Border3DStyle.Sunken;
+            this.toolStripStatusLogPath.Name = "toolStripStatusLogPath";
+            this.toolStripStatusLogPath.Size = new System.Drawing.Size(63, 21);
+            this.toolStripStatusLogPath.Text = "Log Path";
             // 
             // tabControl
             // 
@@ -473,13 +503,15 @@
             this.tabControl.Controls.Add(this.tabPageEncoded);
             this.tabControl.Controls.Add(this.tabPageManuf);
             this.tabControl.Controls.Add(this.tabPageStars);
+            this.tabControl.Controls.Add(this.tabPageScreenshot);
             this.tabControl.Controls.Add(this.tabPageBrgRead);
+            this.tabControl.Controls.Add(this.tabPageBackup);
             this.tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.tabControl.Location = new System.Drawing.Point(0, 25);
             this.tabControl.Name = "tabControl";
             this.tabControl.SelectedIndex = 0;
-            this.tabControl.Size = new System.Drawing.Size(1350, 680);
+            this.tabControl.Size = new System.Drawing.Size(1350, 679);
             this.tabControl.TabIndex = 4;
             // 
             // tabSyatems
@@ -490,7 +522,7 @@
             this.tabSyatems.Location = new System.Drawing.Point(4, 26);
             this.tabSyatems.Name = "tabSyatems";
             this.tabSyatems.Padding = new System.Windows.Forms.Padding(3);
-            this.tabSyatems.Size = new System.Drawing.Size(1342, 650);
+            this.tabSyatems.Size = new System.Drawing.Size(1342, 649);
             this.tabSyatems.TabIndex = 0;
             this.tabSyatems.Text = "Системы";
             // 
@@ -508,6 +540,16 @@
             this.pnlControls.Name = "pnlControls";
             this.pnlControls.Size = new System.Drawing.Size(1328, 113);
             this.pnlControls.TabIndex = 1;
+            // 
+            // lblDistance
+            // 
+            this.lblDistance.AutoSize = true;
+            this.lblDistance.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.lblDistance.Location = new System.Drawing.Point(12, 63);
+            this.lblDistance.Name = "lblDistance";
+            this.lblDistance.Size = new System.Drawing.Size(165, 16);
+            this.lblDistance.TabIndex = 5;
+            this.lblDistance.Text = "Текущие расстояния:";
             // 
             // gbxMiningFilter
             // 
@@ -656,7 +698,7 @@
             // 
             this.spcSystems.Panel2.Controls.Add(this.spcBodies);
             this.spcSystems.Panel2MinSize = 300;
-            this.spcSystems.Size = new System.Drawing.Size(1336, 522);
+            this.spcSystems.Size = new System.Drawing.Size(1336, 521);
             this.spcSystems.SplitterDistance = 450;
             this.spcSystems.SplitterWidth = 5;
             this.spcSystems.TabIndex = 4;
@@ -689,7 +731,7 @@
             this.dgvSystems.Location = new System.Drawing.Point(0, 0);
             this.dgvSystems.MultiSelect = false;
             this.dgvSystems.Name = "dgvSystems";
-            this.dgvSystems.Size = new System.Drawing.Size(446, 518);
+            this.dgvSystems.Size = new System.Drawing.Size(446, 517);
             this.dgvSystems.TabIndex = 0;
             this.dgvSystems.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvSystems_CellEndEdit);
             this.dgvSystems.CellEnter += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvSystems_CellEnter);
@@ -817,8 +859,8 @@
             // 
             this.spcBodies.Panel2.Controls.Add(this.spcRaw);
             this.spcBodies.Panel2MinSize = 50;
-            this.spcBodies.Size = new System.Drawing.Size(881, 522);
-            this.spcBodies.SplitterDistance = 352;
+            this.spcBodies.Size = new System.Drawing.Size(881, 521);
+            this.spcBodies.SplitterDistance = 351;
             this.spcBodies.SplitterWidth = 5;
             this.spcBodies.TabIndex = 0;
             // 
@@ -836,7 +878,7 @@
             // spcSignals.Panel2
             // 
             this.spcSignals.Panel2.Controls.Add(this.dgvSignals);
-            this.spcSignals.Size = new System.Drawing.Size(881, 352);
+            this.spcSignals.Size = new System.Drawing.Size(881, 351);
             this.spcSignals.SplitterDistance = 684;
             this.spcSignals.SplitterWidth = 5;
             this.spcSignals.TabIndex = 1;
@@ -871,7 +913,7 @@
             this.dgvBodies.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dgvBodies.Location = new System.Drawing.Point(0, 0);
             this.dgvBodies.Name = "dgvBodies";
-            this.dgvBodies.Size = new System.Drawing.Size(680, 348);
+            this.dgvBodies.Size = new System.Drawing.Size(680, 347);
             this.dgvBodies.TabIndex = 0;
             this.dgvBodies.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvBodies_CellEndEdit);
             this.dgvBodies.CellEnter += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvBodies_CellEnter);
@@ -1028,7 +1070,7 @@
             this.dgvSignals.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dgvSignals.Location = new System.Drawing.Point(0, 0);
             this.dgvSignals.Name = "dgvSignals";
-            this.dgvSignals.Size = new System.Drawing.Size(188, 348);
+            this.dgvSignals.Size = new System.Drawing.Size(188, 347);
             this.dgvSignals.TabIndex = 0;
             // 
             // dgvsiSKey
@@ -1393,7 +1435,7 @@
             this.tabPageCMDR.Location = new System.Drawing.Point(4, 26);
             this.tabPageCMDR.Name = "tabPageCMDR";
             this.tabPageCMDR.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageCMDR.Size = new System.Drawing.Size(1342, 650);
+            this.tabPageCMDR.Size = new System.Drawing.Size(1342, 649);
             this.tabPageCMDR.TabIndex = 1;
             this.tabPageCMDR.Text = "CMDR";
             // 
@@ -1808,7 +1850,7 @@
             this.tabPageCarrier.Location = new System.Drawing.Point(4, 26);
             this.tabPageCarrier.Name = "tabPageCarrier";
             this.tabPageCarrier.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageCarrier.Size = new System.Drawing.Size(1342, 650);
+            this.tabPageCarrier.Size = new System.Drawing.Size(1342, 649);
             this.tabPageCarrier.TabIndex = 6;
             this.tabPageCarrier.Text = "Носитель";
             // 
@@ -1820,7 +1862,7 @@
             this.gpbCargo.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.gpbCargo.Location = new System.Drawing.Point(8, 366);
             this.gpbCargo.Name = "gpbCargo";
-            this.gpbCargo.Size = new System.Drawing.Size(518, 281);
+            this.gpbCargo.Size = new System.Drawing.Size(518, 280);
             this.gpbCargo.TabIndex = 8;
             this.gpbCargo.TabStop = false;
             this.gpbCargo.Text = "Груз";
@@ -1863,7 +1905,7 @@
             dataGridViewCellStyle33.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
             dataGridViewCellStyle33.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.dgvCargo.RowHeadersDefaultCellStyle = dataGridViewCellStyle33;
-            this.dgvCargo.Size = new System.Drawing.Size(512, 253);
+            this.dgvCargo.Size = new System.Drawing.Size(512, 252);
             this.dgvCargo.TabIndex = 0;
             this.dgvCargo.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvCargo_CellEndEdit);
             // 
@@ -2615,11 +2657,10 @@
             this.tabPageRaw.Location = new System.Drawing.Point(4, 26);
             this.tabPageRaw.Name = "tabPageRaw";
             this.tabPageRaw.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageRaw.Size = new System.Drawing.Size(1342, 650);
+            this.tabPageRaw.Size = new System.Drawing.Size(1342, 649);
             this.tabPageRaw.TabIndex = 2;
             this.tabPageRaw.Text = "Сырьё";
             this.tabPageRaw.UseVisualStyleBackColor = true;
-            this.tabPageRaw.Enter += new System.EventHandler(this.tabPageRaw_Enter);
             // 
             // dgvCmdrRaw
             // 
@@ -2662,8 +2703,9 @@
             dataGridViewCellStyle36.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
             dataGridViewCellStyle36.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.dgvCmdrRaw.RowHeadersDefaultCellStyle = dataGridViewCellStyle36;
-            this.dgvCmdrRaw.Size = new System.Drawing.Size(1336, 644);
+            this.dgvCmdrRaw.Size = new System.Drawing.Size(1336, 643);
             this.dgvCmdrRaw.TabIndex = 0;
+            this.dgvCmdrRaw.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.dgvCmdrRaw_RowPrePaint);
             // 
             // dgvcCmdrRawKey
             // 
@@ -2728,7 +2770,7 @@
             this.tabPageEncoded.Location = new System.Drawing.Point(4, 26);
             this.tabPageEncoded.Name = "tabPageEncoded";
             this.tabPageEncoded.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageEncoded.Size = new System.Drawing.Size(1342, 650);
+            this.tabPageEncoded.Size = new System.Drawing.Size(1342, 649);
             this.tabPageEncoded.TabIndex = 3;
             this.tabPageEncoded.Text = "Данные";
             this.tabPageEncoded.UseVisualStyleBackColor = true;
@@ -2774,8 +2816,9 @@
             dataGridViewCellStyle39.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
             dataGridViewCellStyle39.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.dgvCmdrEncoded.RowHeadersDefaultCellStyle = dataGridViewCellStyle39;
-            this.dgvCmdrEncoded.Size = new System.Drawing.Size(1336, 644);
+            this.dgvCmdrEncoded.Size = new System.Drawing.Size(1336, 643);
             this.dgvCmdrEncoded.TabIndex = 1;
+            this.dgvCmdrEncoded.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.dgvCmdrEncoded_RowPrePaint);
             // 
             // dgvcCmdrEncodedKey
             // 
@@ -2840,7 +2883,7 @@
             this.tabPageManuf.Location = new System.Drawing.Point(4, 26);
             this.tabPageManuf.Name = "tabPageManuf";
             this.tabPageManuf.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageManuf.Size = new System.Drawing.Size(1342, 650);
+            this.tabPageManuf.Size = new System.Drawing.Size(1342, 649);
             this.tabPageManuf.TabIndex = 4;
             this.tabPageManuf.Text = "Промышленные";
             this.tabPageManuf.UseVisualStyleBackColor = true;
@@ -2886,8 +2929,9 @@
             dataGridViewCellStyle42.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
             dataGridViewCellStyle42.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.dgvCmdrManuf.RowHeadersDefaultCellStyle = dataGridViewCellStyle42;
-            this.dgvCmdrManuf.Size = new System.Drawing.Size(1336, 644);
+            this.dgvCmdrManuf.Size = new System.Drawing.Size(1336, 643);
             this.dgvCmdrManuf.TabIndex = 2;
+            this.dgvCmdrManuf.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.dgvCmdrManuf_RowPrePaint);
             // 
             // dgvcManufKey
             // 
@@ -2952,7 +2996,7 @@
             this.tabPageStars.Location = new System.Drawing.Point(4, 26);
             this.tabPageStars.Name = "tabPageStars";
             this.tabPageStars.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageStars.Size = new System.Drawing.Size(1342, 650);
+            this.tabPageStars.Size = new System.Drawing.Size(1342, 649);
             this.tabPageStars.TabIndex = 5;
             this.tabPageStars.Text = "Классы звезд";
             this.tabPageStars.UseVisualStyleBackColor = true;
@@ -2963,8 +3007,102 @@
             this.webBrowserStars.Location = new System.Drawing.Point(3, 3);
             this.webBrowserStars.MinimumSize = new System.Drawing.Size(20, 20);
             this.webBrowserStars.Name = "webBrowserStars";
-            this.webBrowserStars.Size = new System.Drawing.Size(1336, 644);
+            this.webBrowserStars.Size = new System.Drawing.Size(1336, 643);
             this.webBrowserStars.TabIndex = 0;
+            // 
+            // tabPageScreenshot
+            // 
+            this.tabPageScreenshot.BackColor = System.Drawing.Color.LightGray;
+            this.tabPageScreenshot.Controls.Add(this.pbxScreenshot);
+            this.tabPageScreenshot.Controls.Add(this.lblScreenName);
+            this.tabPageScreenshot.Controls.Add(this.btnScreenTo);
+            this.tabPageScreenshot.Controls.Add(this.btnScreenFrom);
+            this.tabPageScreenshot.Controls.Add(this.tbxScreenTo);
+            this.tabPageScreenshot.Controls.Add(this.lblScreenTo);
+            this.tabPageScreenshot.Controls.Add(this.tbxScreenFrom);
+            this.tabPageScreenshot.Controls.Add(this.lblScreenFrom);
+            this.tabPageScreenshot.Location = new System.Drawing.Point(4, 26);
+            this.tabPageScreenshot.Name = "tabPageScreenshot";
+            this.tabPageScreenshot.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPageScreenshot.Size = new System.Drawing.Size(1342, 649);
+            this.tabPageScreenshot.TabIndex = 8;
+            this.tabPageScreenshot.Text = "Скриншот";
+            // 
+            // pbxScreenshot
+            // 
+            this.pbxScreenshot.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.pbxScreenshot.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.pbxScreenshot.Location = new System.Drawing.Point(8, 84);
+            this.pbxScreenshot.Name = "pbxScreenshot";
+            this.pbxScreenshot.Size = new System.Drawing.Size(1326, 559);
+            this.pbxScreenshot.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pbxScreenshot.TabIndex = 7;
+            this.pbxScreenshot.TabStop = false;
+            // 
+            // lblScreenName
+            // 
+            this.lblScreenName.AutoSize = true;
+            this.lblScreenName.Location = new System.Drawing.Point(8, 64);
+            this.lblScreenName.Name = "lblScreenName";
+            this.lblScreenName.Size = new System.Drawing.Size(72, 17);
+            this.lblScreenName.TabIndex = 6;
+            this.lblScreenName.Text = "Screenshot";
+            // 
+            // btnScreenTo
+            // 
+            this.btnScreenTo.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.btnScreenTo.Location = new System.Drawing.Point(482, 35);
+            this.btnScreenTo.Name = "btnScreenTo";
+            this.btnScreenTo.Size = new System.Drawing.Size(26, 23);
+            this.btnScreenTo.TabIndex = 5;
+            this.btnScreenTo.Text = "...";
+            this.btnScreenTo.UseVisualStyleBackColor = true;
+            this.btnScreenTo.Click += new System.EventHandler(this.btnScreenTo_Click);
+            // 
+            // btnScreenFrom
+            // 
+            this.btnScreenFrom.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.btnScreenFrom.Location = new System.Drawing.Point(482, 9);
+            this.btnScreenFrom.Name = "btnScreenFrom";
+            this.btnScreenFrom.Size = new System.Drawing.Size(26, 23);
+            this.btnScreenFrom.TabIndex = 4;
+            this.btnScreenFrom.Text = "...";
+            this.btnScreenFrom.UseVisualStyleBackColor = true;
+            this.btnScreenFrom.Click += new System.EventHandler(this.btnScreenFrom_Click);
+            // 
+            // tbxScreenTo
+            // 
+            this.tbxScreenTo.Location = new System.Drawing.Point(66, 33);
+            this.tbxScreenTo.Name = "tbxScreenTo";
+            this.tbxScreenTo.Size = new System.Drawing.Size(410, 25);
+            this.tbxScreenTo.TabIndex = 3;
+            // 
+            // lblScreenTo
+            // 
+            this.lblScreenTo.AutoSize = true;
+            this.lblScreenTo.Location = new System.Drawing.Point(8, 36);
+            this.lblScreenTo.Name = "lblScreenTo";
+            this.lblScreenTo.Size = new System.Drawing.Size(39, 17);
+            this.lblScreenTo.TabIndex = 2;
+            this.lblScreenTo.Text = "Куда:";
+            // 
+            // tbxScreenFrom
+            // 
+            this.tbxScreenFrom.Location = new System.Drawing.Point(66, 6);
+            this.tbxScreenFrom.Name = "tbxScreenFrom";
+            this.tbxScreenFrom.Size = new System.Drawing.Size(410, 25);
+            this.tbxScreenFrom.TabIndex = 1;
+            // 
+            // lblScreenFrom
+            // 
+            this.lblScreenFrom.AutoSize = true;
+            this.lblScreenFrom.Location = new System.Drawing.Point(8, 9);
+            this.lblScreenFrom.Name = "lblScreenFrom";
+            this.lblScreenFrom.Size = new System.Drawing.Size(52, 17);
+            this.lblScreenFrom.TabIndex = 0;
+            this.lblScreenFrom.Text = "Откуда:";
             // 
             // tabPageBrgRead
             // 
@@ -2974,7 +3112,7 @@
             this.tabPageBrgRead.Location = new System.Drawing.Point(4, 26);
             this.tabPageBrgRead.Name = "tabPageBrgRead";
             this.tabPageBrgRead.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageBrgRead.Size = new System.Drawing.Size(1342, 650);
+            this.tabPageBrgRead.Size = new System.Drawing.Size(1342, 649);
             this.tabPageBrgRead.TabIndex = 7;
             this.tabPageBrgRead.Text = "Фоновое чтение";
             // 
@@ -2989,7 +3127,7 @@
             this.tbxBkgReadLog.Name = "tbxBkgReadLog";
             this.tbxBkgReadLog.ReadOnly = true;
             this.tbxBkgReadLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.tbxBkgReadLog.Size = new System.Drawing.Size(1328, 611);
+            this.tbxBkgReadLog.Size = new System.Drawing.Size(1328, 610);
             this.tbxBkgReadLog.TabIndex = 3;
             // 
             // chkEnableBkgRead
@@ -3004,6 +3142,68 @@
             this.chkEnableBkgRead.UseVisualStyleBackColor = true;
             this.chkEnableBkgRead.CheckedChanged += new System.EventHandler(this.chkEnableBkgRead_CheckedChanged);
             // 
+            // tabPageBackup
+            // 
+            this.tabPageBackup.BackColor = System.Drawing.Color.LightGray;
+            this.tabPageBackup.Controls.Add(this.tbxBackupLog);
+            this.tabPageBackup.Controls.Add(this.btnBackup);
+            this.tabPageBackup.Controls.Add(this.btnBackupPath);
+            this.tabPageBackup.Controls.Add(this.lblBackup);
+            this.tabPageBackup.Controls.Add(this.tbxBackup);
+            this.tabPageBackup.Location = new System.Drawing.Point(4, 26);
+            this.tabPageBackup.Name = "tabPageBackup";
+            this.tabPageBackup.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPageBackup.Size = new System.Drawing.Size(1342, 649);
+            this.tabPageBackup.TabIndex = 9;
+            this.tabPageBackup.Text = "Бэкап логов";
+            // 
+            // tbxBackupLog
+            // 
+            this.tbxBackupLog.Location = new System.Drawing.Point(11, 73);
+            this.tbxBackupLog.Multiline = true;
+            this.tbxBackupLog.Name = "tbxBackupLog";
+            this.tbxBackupLog.ReadOnly = true;
+            this.tbxBackupLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.tbxBackupLog.Size = new System.Drawing.Size(551, 311);
+            this.tbxBackupLog.TabIndex = 7;
+            // 
+            // btnBackup
+            // 
+            this.btnBackup.Location = new System.Drawing.Point(11, 40);
+            this.btnBackup.Name = "btnBackup";
+            this.btnBackup.Size = new System.Drawing.Size(86, 27);
+            this.btnBackup.TabIndex = 6;
+            this.btnBackup.Text = "Сохранить";
+            this.btnBackup.UseVisualStyleBackColor = true;
+            this.btnBackup.Click += new System.EventHandler(this.btnBackup_Click);
+            // 
+            // btnBackupPath
+            // 
+            this.btnBackupPath.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.btnBackupPath.Location = new System.Drawing.Point(536, 9);
+            this.btnBackupPath.Name = "btnBackupPath";
+            this.btnBackupPath.Size = new System.Drawing.Size(26, 23);
+            this.btnBackupPath.TabIndex = 5;
+            this.btnBackupPath.Text = "...";
+            this.btnBackupPath.UseVisualStyleBackColor = true;
+            this.btnBackupPath.Click += new System.EventHandler(this.btnBackupPath_Click);
+            // 
+            // lblBackup
+            // 
+            this.lblBackup.AutoSize = true;
+            this.lblBackup.Location = new System.Drawing.Point(8, 9);
+            this.lblBackup.Name = "lblBackup";
+            this.lblBackup.Size = new System.Drawing.Size(126, 17);
+            this.lblBackup.TabIndex = 1;
+            this.lblBackup.Text = "Каталог для бекапа";
+            // 
+            // tbxBackup
+            // 
+            this.tbxBackup.Location = new System.Drawing.Point(140, 6);
+            this.tbxBackup.Name = "tbxBackup";
+            this.tbxBackup.Size = new System.Drawing.Size(390, 25);
+            this.tbxBackup.TabIndex = 0;
+            // 
             // fswDir
             // 
             this.fswDir.EnableRaisingEvents = true;
@@ -3011,22 +3211,10 @@
             this.fswDir.SynchronizingObject = this;
             this.fswDir.Created += new System.IO.FileSystemEventHandler(this.fswDir_Created);
             // 
-            // fswFile
+            // readLogTimer
             // 
-            this.fswFile.EnableRaisingEvents = true;
-            this.fswFile.NotifyFilter = System.IO.NotifyFilters.Size;
-            this.fswFile.SynchronizingObject = this;
-            this.fswFile.Changed += new System.IO.FileSystemEventHandler(this.fswFile_Changed);
-            // 
-            // lblDistance
-            // 
-            this.lblDistance.AutoSize = true;
-            this.lblDistance.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.lblDistance.Location = new System.Drawing.Point(12, 63);
-            this.lblDistance.Name = "lblDistance";
-            this.lblDistance.Size = new System.Drawing.Size(165, 16);
-            this.lblDistance.TabIndex = 5;
-            this.lblDistance.Text = "Текущие расстояния:";
+            this.readLogTimer.Interval = 2000;
+            this.readLogTimer.Tick += new System.EventHandler(this.readLogTimer_Tick);
             // 
             // Main
             // 
@@ -3110,10 +3298,14 @@
             this.tabPageManuf.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvCmdrManuf)).EndInit();
             this.tabPageStars.ResumeLayout(false);
+            this.tabPageScreenshot.ResumeLayout(false);
+            this.tabPageScreenshot.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbxScreenshot)).EndInit();
             this.tabPageBrgRead.ResumeLayout(false);
             this.tabPageBrgRead.PerformLayout();
+            this.tabPageBackup.ResumeLayout(false);
+            this.tabPageBackup.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.fswDir)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.fswFile)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -3324,7 +3516,6 @@
         private System.Windows.Forms.CheckBox chkEnableBkgRead;
         private System.Windows.Forms.TextBox tbxBkgReadLog;
         private System.IO.FileSystemWatcher fswDir;
-        private System.IO.FileSystemWatcher fswFile;
         private System.Windows.Forms.DataGridViewTextBoxColumn dgvsSKey;
         private System.Windows.Forms.DataGridViewTextBoxColumn dgvsTimestamp;
         private System.Windows.Forms.DataGridViewTextBoxColumn dgvsName;
@@ -3335,6 +3526,23 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn dgvsY;
         private System.Windows.Forms.DataGridViewTextBoxColumn dgvsZ;
         private System.Windows.Forms.Label lblDistance;
+        private System.Windows.Forms.TabPage tabPageScreenshot;
+        private System.Windows.Forms.TextBox tbxScreenTo;
+        private System.Windows.Forms.Label lblScreenTo;
+        private System.Windows.Forms.TextBox tbxScreenFrom;
+        private System.Windows.Forms.Label lblScreenFrom;
+        private System.Windows.Forms.Button btnScreenFrom;
+        private System.Windows.Forms.Button btnScreenTo;
+        private System.Windows.Forms.PictureBox pbxScreenshot;
+        private System.Windows.Forms.Label lblScreenName;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLogPath;
+        private System.Windows.Forms.TabPage tabPageBackup;
+        private System.Windows.Forms.Label lblBackup;
+        private System.Windows.Forms.TextBox tbxBackup;
+        private System.Windows.Forms.Button btnBackupPath;
+        private System.Windows.Forms.Button btnBackup;
+        private System.Windows.Forms.TextBox tbxBackupLog;
+        private System.Windows.Forms.Timer readLogTimer;
     }
 }
 

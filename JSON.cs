@@ -190,6 +190,38 @@ namespace ED_Systems_v2
 
     }
 
-    
-
+    //"event":"Screenshot"
+    public class Screenshot
+    {
+        public DateTime timestamp { get; set; } = new DateTime();
+        public string @event { get; set; } = "";
+        public string Filename { get; set; } = "";
+        public int Width { get; set; } = 0;
+        public int Height { get; set; } = 0;
+        public string System { get; set; } = "";
+        public string Body { get; set; } = "";
+    }
+    //"event":"Location"
+    public class Location
+    {
+        public DateTime timestamp { get; set; } = new DateTime();
+        public string @event { get; set; } = "";
+        public bool Docked { get; set; } = false;
+        public string StarSystem { get; set; } = "";
+        public ulong SystemAddress { get; set; } = 0;
+        public List<double> StarPos { get; set; } = new List<double>();
+        public string SystemAllegiance { get; set; } = "";
+        public string SystemEconomy { get; set; } = "";
+        public string SystemEconomy_Localised { get; set; } = "";
+        public string SystemSecondEconomy { get; set; } = "";
+        public string SystemSecondEconomy_Localised { get; set; } = "";
+        public string SystemGovernment { get; set; } = "";
+        public string SystemGovernment_Localised { get; set; } = "";
+        public string SystemSecurity { get; set; } = "";
+        public string SystemSecurity_Localised { get; set; } = "";
+        public int Population { get; set; } = 0;
+        public string Body { get; set; } = "";
+        public int BodyID { get; set; } = 0;
+        public string BodyType { get; set; } = "";
+    }
 }

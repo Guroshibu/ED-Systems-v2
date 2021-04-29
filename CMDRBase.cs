@@ -83,6 +83,26 @@ namespace ED_Systems_v2
             }
             return dt;
         }
+        public void UpdateCMDR(string name, UInt64 syskey, string sysname)
+        {
+            exeption = "";
+            cmd.CommandText = @"UPDATE cmdrs
+                                SET syskey = @syskey,
+                                    sysname = @sysname
+                                WHERE name = @name";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@name", DbType.String).Value = name;
+            cmd.Parameters.Add("@syskey", DbType.UInt64).Value = syskey;
+            cmd.Parameters.Add("@sysname", DbType.String).Value = sysname;
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
         public void InsertCMDR(string name)
         {
             exeption = "";

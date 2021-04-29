@@ -55,9 +55,34 @@ namespace ED_Systems_v2
 
         long carrierID = 0;
 
-        double timestamp;
-        int lastReadLine;
-        bool readingLog = false;
+        string logCMDR;
+        long logFC = 0;
+        //List<string> screens = new List<string>(); 
+        //settings
+        string donateAddr = "";
+        string host = "";
+        string port = "";
+        string db = "";
+        string user = "";
+        string pwd = "";
+        //-------------------
+        string logPath = "";
+        string lastLog = "";
+        string bakPath = "";
+        string toPath = "";
+        string fromPath = "";
+        int maxRadius = 500;
+        ulong lastTime = 0;
+        bool bkgRead = false;
+        int bkgLastLine = -1;
+        //-------------------
+        string cmdrName = "";
+        ulong cmdrLastKey = 0;
+        string cmdrLastName = "";
+        //-------------------
+        ulong fcLastKey = 0;
+        bool visited = true;
+
         //events
         FSDJump fsdJump = new FSDJump();
         CarrierJump carrierJump = new CarrierJump();
@@ -103,7 +128,8 @@ namespace ED_Systems_v2
         CarrierJumpRequest carrierJumpRequest = new CarrierJumpRequest();
         CargoTransfer cargoTransfer = new CargoTransfer();
         CarrierJumpCancelled carrierJumpCancelled = new CarrierJumpCancelled();
-
+        Screenshot screenshot = new Screenshot();
+        Location location = new Location();
         public Main()
         {
             InitializeComponent();
@@ -157,7 +183,40 @@ namespace ED_Systems_v2
 
             Uri url = new Uri(@"http://edspace.ga/starsinfo/index.html");
             webBrowserStars.Url = url;
-  
+
+            //settings
+            DataTable dt = new DataTable();
+            dt = ib.SelectProgramSettings();
+            if(ib.exeption == "")
+            {
+                donateAddr = dt.Rows[0]["DonateAddr"].ToString();
+                host = dt.Rows[0]["MySqlHost"].ToString();
+                port = dt.Rows[0]["MySqlPort"].ToString();
+                db = dt.Rows[0]["MySqlDb"].ToString();
+                user = dt.Rows[0]["MySqlUser"].ToString();
+                pwd = dt.Rows[0]["MySqlPwd"].ToString();
+            }
+            else
+            {
+                MessageBox.Show("Ошибка локальной базы:\r\n" + ib.exeption);
+            }
+            dt = ib.SelectUserSettings();
+            if (ib.exeption == "")
+            {
+                logPath = dt.Rows[0]["LogPath"].ToString();
+                lastLog = dt.Rows[0]["LastLog"].ToString();
+                bakPath = dt.Rows[0]["BackupPath"].ToString();
+                toPath = dt.Rows[0]["ToImgPath"].ToString();
+                fromPath = dt.Rows[0]["FromImgPath"].ToString();
+                maxRadius = Convert.ToInt32(dt.Rows[0]["MaxRadius"]);
+                lastTime = Convert.ToUInt64(dt.Rows[0]["LastTimestamp"]);
+                bkgRead = Convert.ToBoolean(dt.Rows[0]["BkgRead"]);
+                bkgLastLine = Convert.ToInt32(dt.Rows[0]["BkgLastLine"]);
+            }
+            else
+            {
+                MessageBox.Show("Ошибка локальной базы:\r\n" + ib.exeption);
+            }
         }
         private bool LocalBaseExeption()
         {
@@ -204,19 +263,26 @@ namespace ED_Systems_v2
             }
             return false;
         }
-        private double ToTimestamp(DateTime date)
+        private ulong ToTimestamp(DateTime date)
         {
             DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
             TimeSpan diff = date - origin;
-            return Math.Floor(diff.TotalSeconds);
+            return Convert.ToUInt64(Math.Floor(diff.TotalSeconds));
         }
         private void Main_Load(object sender, EventArgs e)
         {
-            toolStripStatusLastLog.Text = Properties.Settings.Default.LastLog;
+            DataTable dt;
+            LoadCMDRs();
+            LoadCarriers();
+
+            toolStripStatusLastLog.Text = lastLog;
+            toolStripStatusLogPath.Text = logPath;
             lblSystems.Text = "Систем 0 Радиус поиска " +
-                Properties.Settings.Default.MaxRadius.ToString() + " св.л.";
-            notVisited = Properties.Settings.Default.NotVisited;
-            carrierID = Properties.Settings.Default.CarrierID;
+                maxRadius.ToString() + " св.л.";
+
+            tbxScreenFrom.Text = fromPath;
+            tbxScreenTo.Text = toPath;
+            tbxBackup.Text = bakPath;
 
             filterRaw = lb.SelectDistinctRaw();
             if (LocalBaseExeption()) return;
@@ -227,94 +293,94 @@ namespace ED_Systems_v2
             filterBodies = lb.SelectDistinctBodies();
             if (LocalBaseExeption()) return;
 
-            DataTable dt;
-
-            dt = lb.SelectSystemByKey(Properties.Settings.Default.LastKey);
-            if (LocalBaseExeption()) return;
-            if (dt.Rows.Count == 0) return;
-
-            toolStripStatusCurrent.Text = dt.Rows[0]["Name"].ToString();
-            cx = Convert.ToDouble(dt.Rows[0]["X"]);
-            cy = Convert.ToDouble(dt.Rows[0]["Y"]);
-            cz = Convert.ToDouble(dt.Rows[0]["Z"]);
-
-            if(Properties.Settings.Default.LastKeyFC != 0)
+            dt = lb.SelectSystemByKey(cmdrLastKey);
+            if(lb.exeption == "" && dt.Rows.Count > 0)
             {
-                dt = lb.SelectSystemByKey(Properties.Settings.Default.LastKeyFC);
-                if (LocalBaseExeption()) return;
-                if (dt.Rows.Count == 0) return;
+                toolStripStatusCurrent.Text = dt.Rows[0]["Name"].ToString();
+                cx = Convert.ToDouble(dt.Rows[0]["X"]);
+                cy = Convert.ToDouble(dt.Rows[0]["Y"]);
+                cz = Convert.ToDouble(dt.Rows[0]["Z"]);
+            }
 
-                fcx = Convert.ToDouble(dt.Rows[0]["X"]);
-                fcy = Convert.ToDouble(dt.Rows[0]["Y"]);
-                fcz = Convert.ToDouble(dt.Rows[0]["Z"]);
+            if(fcLastKey != 0)
+            {
+                dt = lb.SelectSystemByKey(fcLastKey);
+                if (LocalBaseExeption()) return;
+                if (dt.Rows.Count > 0)
+                {
+                    fcx = Convert.ToDouble(dt.Rows[0]["X"]);
+                    fcy = Convert.ToDouble(dt.Rows[0]["Y"]);
+                    fcz = Convert.ToDouble(dt.Rows[0]["Z"]);
+                }
+   
             }
 
             FillMiningFilter(filterRaw);
             LoadSystems();
 
             //watches
-            if(Properties.Settings.Default.LogPath == "")
+            if (bkgRead) readLogTimer.Start();
+            if (logPath == "")
             {
                 fswDir.EnableRaisingEvents = false;
-                fswFile.EnableRaisingEvents = false;
+                readLogTimer.Stop();
             }
             try
             {
-                fswDir.Path = Properties.Settings.Default.LogPath;
-                fswFile.Path = Properties.Settings.Default.LogPath;
+                fswDir.Path = logPath;
             }
             catch(Exception ex)
             {
-
+                fswDir.EnableRaisingEvents = false;
             }
-            
-            fswFile.Filter = Properties.Settings.Default.LastLog;
-
-            chkEnableBkgRead.Checked = Properties.Settings.Default.BkgRead;
-            lastReadLine = Properties.Settings.Default.BkgLastLine;
-
-            //cmdrs
-            dt = cb.SelectCMDRs();
-            foreach (DataRow row in dt.Rows)
-            {
-                cbxCMDR.Items.Add(row["name"].ToString());
-            }
-            try
-            {
-                cbxCMDR.SelectedItem = cbxCMDR.Items[0];
-            }
-            catch(Exception ex)
-            {
-                cbxCMDR.SelectedItem = null;
-            }
-            
-            //carriers
-            dt = crb.SelectCarriers();
-            foreach (DataRow row in dt.Rows)
-            {
-                cbxCarrier.Items.Add(row["name"].ToString() +
-                    " " + row["callsign"].ToString() +
-                    " (" + row["id"].ToString() + ")");
-            }
-            try
-            {
-                cbxCarrier.SelectedItem = cbxCarrier.Items[0];
-            }
-            catch (Exception ex)
-            {
-                cbxCarrier.SelectedItem = null;
-            }
-            
-
+            chkEnableBkgRead.Checked = bkgRead;
         }
         private void Main_FormClosed(object sender, FormClosedEventArgs e)
         {
-            Properties.Settings.Default.BkgRead = chkEnableBkgRead.Checked;
-            Properties.Settings.Default.BkgLastLine = lastReadLine;
-            Properties.Settings.Default.LastLog = toolStripStatusLastLog.Text;
-            Properties.Settings.Default.NotVisited = notVisited;
-            Properties.Settings.Default.CarrierID = carrierID;
-            Properties.Settings.Default.Save();
+
+        }
+        private void LoadCMDRs()
+        {
+            DataTable dt;
+       
+            dt = cb.SelectCMDRs();
+            if (cb.exeption == "")
+            {
+                foreach (DataRow row in dt.Rows)
+                {
+                    cbxCMDR.Items.Add(row["name"].ToString());
+                }
+            }
+            else
+            {
+                MessageBox.Show("Ошибка локальной базы:\r\n" + cb.exeption);
+            }
+            if (cbxCMDR.Items.Count > 0)
+            {
+                cbxCMDR.SelectedItem = cbxCMDR.Items[0];
+            }
+        }
+        private void LoadCarriers()
+        {
+            DataTable dt;
+            dt = crb.SelectCarriers();
+            if(crb.exeption == "")
+            {
+                foreach (DataRow row in dt.Rows)
+                {
+                    cbxCarrier.Items.Add(row["name"].ToString() +
+                        " " + row["callsign"].ToString() +
+                        " (" + row["id"].ToString() + ")");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Ошибка локальной базы:\r\n" + crb.exeption);
+            }
+            if(cbxCarrier.Items.Count > 0)
+            {
+                cbxCarrier.SelectedItem = cbxCarrier.Items[0];
+            }
         }
         private void FillMiningFilter(DataTable dt)
         {
@@ -341,12 +407,11 @@ namespace ED_Systems_v2
         private void GetLogData(string path, string file)
         {
             if (!File.Exists(path)) return;
-
-            gb = new GlobalBase();
-            timestamp = 0;
+            readLogTimer.Stop();
+            ulong timestamp = 0;
+            gb = new GlobalBase(host, db, port, user, pwd);
 
             List<string> fileLines = new List<string>();
-            
             
             FileInfo log = new FileInfo(path);
             StreamReader stream = new StreamReader(log.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
@@ -371,12 +436,16 @@ namespace ED_Systems_v2
                 toolStripProgressBar.PerformStep();
             }
             toolStripProgressBar.Value = 0;
-            if(timestamp > Properties.Settings.Default.LastTS)
+            if(timestamp > lastTime)
             {
-                Properties.Settings.Default.LastLog = file;
-                Properties.Settings.Default.LastTS = timestamp;
-                toolStripStatusLastLog.Text = Properties.Settings.Default.LastLog;
-                Properties.Settings.Default.Save();
+                lastLog = file;
+                ib.UpdateLastLog(lastLog);
+                lastTime = timestamp;
+                ib.UpdateLastTimestamp(lastTime);
+                toolStripStatusLastLog.Text = lastLog;
+                bkgLastLine = fileLines.Count - 1;
+                ib.UpdateBkgLastLine(bkgLastLine);
+
             }
             filterRaw = lb.SelectDistinctRaw();
             if (LocalBaseExeption()) return;
@@ -402,18 +471,22 @@ namespace ED_Systems_v2
             {
                 FillMiningFilter(filterBodies);
             }
-            ApplyFilter();
+            
             LoadCMDRData();
             LoadCarrierData();
+            ApplyFilter();
+            if (bkgRead) readLogTimer.Start();
         }
-        private double SaveEvent(string line)
+        private ulong SaveEvent(string line)
         {
+            
             DataTable dt = new DataTable();
             UInt64 SKey = 0;
             UInt64 BKey = 0;
             UInt64 RKey = 0;
             UInt64 glBKey = 0;
             UInt64 glRKey = 0;
+            ulong timestamp = 0;
 
             int count = 0;
 
@@ -421,6 +494,40 @@ namespace ED_Systems_v2
 
             ev = JsonConvert.DeserializeObject<Event>(line);
             ib.InsertEvent(ev.timestamp, ev.@event);
+            timestamp = ToTimestamp(ev.timestamp);
+            //"event":"Location"
+            if (line.IndexOf("\"event\":\"Location\"") >= 0)
+            {
+                location = JsonConvert.DeserializeObject<Location>(line);
+                dt = lb.SelectSystemByKey(location.SystemAddress);
+                if (dt.Rows.Count == 0) lb.InsertSystem(location); //add
+                else lb.UpdateSystem(location);    //update
+                //global
+                if (gb.connected)
+                {
+                    count = gb.SelectSystemsCount(location.SystemAddress);
+                    if (count == 0) gb.InsertSystem(location); //add
+                    else gb.UpdateSystem(location);//update
+                }
+                //current
+                cx = Convert.ToDouble(location.StarPos[0]);
+                cy = Convert.ToDouble(location.StarPos[1]);
+                cz = Convert.ToDouble(location.StarPos[2]);
+                toolStripStatusCurrent.Text = location.StarSystem;
+                //SKey
+                cmdrLastKey = location.SystemAddress;
+                cmdrLastName = location.StarSystem;
+                cb.UpdateCMDR(logCMDR, cmdrLastKey, cmdrLastName);
+
+                if (location.SystemAddress == fcLastKey)
+                {
+                    visited = true;
+                    fcx = cx;
+                    fcy = cy;
+                    fcz = cz;
+                    crb.UpdateVisited(logFC, visited);
+                }
+            }
             //"event":"FSDJump"
             if (line.IndexOf("\"event\":\"FSDJump\"") >= 0)
             {
@@ -441,30 +548,32 @@ namespace ED_Systems_v2
                 cy = Convert.ToDouble(fsdJump.StarPos[1]);
                 cz = Convert.ToDouble(fsdJump.StarPos[2]);
                 toolStripStatusCurrent.Text = fsdJump.StarSystem;
-                //timestamp
-                timestamp = ToTimestamp(fsdJump.timestamp);
                 //SKey
-                Properties.Settings.Default.LastKey = fsdJump.SystemAddress;
-                Properties.Settings.Default.LastSystemName = fsdJump.StarSystem;
-                Properties.Settings.Default.Save();
-                if(fsdJump.SystemAddress == Properties.Settings.Default.LastKeyFC)
+                cmdrLastKey = fsdJump.SystemAddress;
+                cmdrLastName = fsdJump.StarSystem;
+                cb.UpdateCMDR(logCMDR, cmdrLastKey, cmdrLastName);
+
+                if(fsdJump.SystemAddress == fcLastKey)
                 {
-                    notVisited = false;
+                    visited = true;
                     fcx = cx;
                     fcy = cy;
                     fcz = cz;
+                    crb.UpdateVisited(logFC, visited);
                 }
             }
             //"event":"CarrierJump"
             if (line.IndexOf("\"event\":\"CarrierJump\"") >= 0)
             {
                 carrierJump = JsonConvert.DeserializeObject<CarrierJump>(line);
+                visited = true;
+                
                 //local
                 dt = lb.SelectSystemByKey(carrierJump.SystemAddress);
                 if (dt.Rows.Count == 0) lb.InsertSystem(carrierJump); //add
                 else lb.UpdateSystem(carrierJump);    //update
-                if (carrierID != 0)
-                    crb.UpdateCurrent(carrierID, carrierJump.StarSystem, carrierJump.Body);
+                if (logFC != 0)
+                    crb.UpdateCurrent(logFC, carrierJump.StarSystem, carrierJump.Body, carrierJump.SystemAddress, visited);
                 //global
                 if (gb.connected)
                 {
@@ -479,36 +588,38 @@ namespace ED_Systems_v2
                     cy = Convert.ToDouble(carrierJump.StarPos[1]);
                     cz = Convert.ToDouble(carrierJump.StarPos[2]);
                     toolStripStatusCurrent.Text = carrierJump.StarSystem;
-                    Properties.Settings.Default.LastKey = carrierJump.SystemAddress;
+                    cmdrLastKey= carrierJump.SystemAddress;
+                    cmdrLastName = carrierJump.StarSystem;
+                    cb.UpdateCMDR(logCMDR, cmdrLastKey, cmdrLastName);
                 }
                 //fc current
                 fcx = Convert.ToDouble(carrierJump.StarPos[0]);
                 fcy = Convert.ToDouble(carrierJump.StarPos[1]);
                 fcz = Convert.ToDouble(carrierJump.StarPos[2]);
-                //timestamp
-                timestamp = ToTimestamp(carrierJump.timestamp);
                 //SKeyFC
-                Properties.Settings.Default.LastKeyFC = carrierJump.SystemAddress;
-                Properties.Settings.Default.Save();
+                fcLastKey = carrierJump.SystemAddress;
+                
             }
             //"event":"Scan"
             if (line.IndexOf("\"event\":\"Scan\"") >= 0)
             {
                 scan = JsonConvert.DeserializeObject<Scan>(line);
+
                 if (scan.SystemAddress == 0 || scan.StarSystem == "")
                 {
                     //если нет адреса или названия системы то берем из последнего прыжка
-                    scan.SystemAddress = Properties.Settings.Default.LastKey;
-                    scan.StarSystem = Properties.Settings.Default.LastSystemName;
+                    scan.SystemAddress = cmdrLastKey;
+                    scan.StarSystem = cmdrLastName;
                 }
                 SKey = scan.SystemAddress;
-
+                dt = lb.SelectSystemByKey(SKey);
+                if (dt.Rows.Count == 0) return timestamp; //нет в базе
                 dt = lb.SelectBodyByName(SKey, scan.BodyName);
                 if (dt.Rows.Count == 0)
                 {
                     //add
                     BKey = lb.InsertBody(SKey, scan);
-                    if (BKey == 0) return 0;
+                    if (BKey == 0) return timestamp;
                 }
                 else
                 {
@@ -714,6 +825,7 @@ namespace ED_Systems_v2
                 if (dt.Rows.Count == 0)
                 {
                     cb.InsertCMDR(cmdr.Name);
+                    logCMDR = cmdr.Name;
                     cbxCMDR.Items.Add(cmdr.Name);
                 }
             }
@@ -747,7 +859,7 @@ namespace ED_Systems_v2
                 materials = JsonConvert.DeserializeObject<CmdrMaterials>(line);
                 foreach (Raw elem in materials.Raw)
                 {
-                    dt = cb.SelectMaterialByKey(cmdr.Name, elem.Name);
+                    dt = cb.SelectMaterialByKey(cmdr.Name, elem.Name.ToLower());
                     if (dt.Rows.Count == 0)
                     {
                         cb.InsertMaterial(cmdr.Name, elem.Name, elem.Count);
@@ -759,6 +871,7 @@ namespace ED_Systems_v2
                 }
                 foreach (Encoded elem in materials.Encoded)
                 {
+                    dt = cb.SelectMaterialByKey(cmdr.Name, elem.Name.ToLower());
                     if (dt.Rows.Count == 0)
                     {
                         cb.InsertMaterial(cmdr.Name, elem.Name, elem.Count);
@@ -770,7 +883,7 @@ namespace ED_Systems_v2
                 }
                 foreach (Manufactured elem in materials.Manufactured)
                 {
-                    dt = cb.SelectMaterialByKey(cmdr.Name, elem.Name);
+                    dt = cb.SelectMaterialByKey(cmdr.Name, elem.Name.ToLower());
                     if (dt.Rows.Count == 0)
                     {
                         cb.InsertMaterial(cmdr.Name, elem.Name, elem.Count);
@@ -785,14 +898,14 @@ namespace ED_Systems_v2
             if (line.IndexOf("\"event\":\"MaterialCollected\"") >= 0)
             {
                 materialCollected = JsonConvert.DeserializeObject<MaterialCollected>(line);
-                dt = cb.SelectMaterialByKey(cmdr.Name, materialCollected.Name);
+                dt = cb.SelectMaterialByKey(cmdr.Name, materialCollected.Name.ToLower());
                 if (dt.Rows.Count == 0)
                 {
-                    cb.InsertMaterial(cmdr.Name, materialCollected.Name, materialCollected.Count);
+                    cb.InsertMaterial(cmdr.Name, materialCollected.Name.ToLower(), materialCollected.Count);
                 }
                 else
                 {
-                    cb.UpdateAddMaterial(cmdr.Name, materialCollected.Name, materialCollected.Count);
+                    cb.UpdateAddMaterial(cmdr.Name, materialCollected.Name.ToLower(), materialCollected.Count);
                 }
             }
             //"event":"EngineerCraft"
@@ -801,7 +914,7 @@ namespace ED_Systems_v2
                 engineerCraft = JsonConvert.DeserializeObject<EngineerCraft>(line);
                 foreach (Ingredient elem in engineerCraft.Ingredients)
                 {
-                    cb.UpdateAddMaterial(cmdr.Name, elem.Name, -elem.Count);
+                    cb.UpdateAddMaterial(cmdr.Name, elem.Name.ToLower(), -elem.Count);
                 }
             }
             //"event":"Synthesis"
@@ -810,23 +923,23 @@ namespace ED_Systems_v2
                 synthesis = JsonConvert.DeserializeObject<Synthesis>(line);
                 foreach (SyntesisMaterial elem in synthesis.Materials)
                 {
-                    cb.UpdateAddMaterial(cmdr.Name, elem.Name, -elem.Count);
+                    cb.UpdateAddMaterial(cmdr.Name, elem.Name.ToLower(), -elem.Count);
                 }
             }
             //"event":"MaterialTrade"
             if (line.IndexOf("\"event\":\"MaterialTrade\"") >= 0)
             {
                 materialTrade = JsonConvert.DeserializeObject<MaterialTrade>(line);
-                dt = cb.SelectMaterialByKey(cmdr.Name, materialTrade.Received.Material);
+                dt = cb.SelectMaterialByKey(cmdr.Name, materialTrade.Received.Material.ToLower());
                 if (dt.Rows.Count == 0)
                 {
-                    cb.InsertMaterial(cmdr.Name, materialTrade.Received.Material, materialTrade.Received.Quantity);
+                    cb.InsertMaterial(cmdr.Name, materialTrade.Received.Material.ToLower(), materialTrade.Received.Quantity);
                 }
                 else
                 {
-                    cb.UpdateAddMaterial(cmdr.Name, materialTrade.Received.Material, materialTrade.Received.Quantity);
+                    cb.UpdateAddMaterial(cmdr.Name, materialTrade.Received.Material.ToLower(), materialTrade.Received.Quantity);
                 }
-                cb.UpdateAddMaterial(cmdr.Name, materialTrade.Paid.Material, -materialTrade.Paid.Quantity);
+                cb.UpdateAddMaterial(cmdr.Name, materialTrade.Paid.Material.ToLower(), -materialTrade.Paid.Quantity);
             }
             //"event":"BuyAmmo"
             if (line.IndexOf("\"event\":\"BuyAmmo\"") >= 0)
@@ -881,17 +994,34 @@ namespace ED_Systems_v2
             {
                 missionCompleted = JsonConvert.DeserializeObject<MissionCompleted>(line);
                 cb.UpdateAddCredits(cmdr.Name, missionCompleted.Reward);
-                if (missionCompleted.CommodityReward == null) return 0;
-                foreach (CommodityReward elem in missionCompleted.CommodityReward)
+                if (missionCompleted.CommodityReward != null)
                 {
-                    dt = cb.SelectMaterialByKey(cmdr.Name, elem.Name);
-                    if (dt.Rows.Count == 0)
+                    foreach (CommodityReward elem in missionCompleted.CommodityReward)
                     {
-                        cb.InsertMaterial(cmdr.Name, elem.Name, elem.Count);
+                        dt = cb.SelectMaterialByKey(cmdr.Name, elem.Name.ToLower());
+                        if (dt.Rows.Count == 0)
+                        {
+                            cb.InsertMaterial(cmdr.Name, elem.Name.ToLower(), elem.Count);
+                        }
+                        else
+                        {
+                            cb.UpdateAddMaterial(cmdr.Name, elem.Name.ToLower(), elem.Count);
+                        }
                     }
-                    else
+                }
+                if (missionCompleted.MaterialsReward != null)
+                {
+                    foreach (MaterialsReward elem in missionCompleted.MaterialsReward)
                     {
-                        cb.UpdateAddMaterial(cmdr.Name, elem.Name, elem.Count);
+                        dt = cb.SelectMaterialByKey(cmdr.Name, elem.Name.ToLower());
+                        if (dt.Rows.Count == 0)
+                        {
+                            cb.InsertMaterial(cmdr.Name, elem.Name.ToLower(), elem.Count);
+                        }
+                        else
+                        {
+                            cb.UpdateAddMaterial(cmdr.Name, elem.Name.ToLower(), elem.Count);
+                        }
                     }
                 }
             }
@@ -985,7 +1115,7 @@ namespace ED_Systems_v2
                 carrierBuy = JsonConvert.DeserializeObject<CarrierBuy>(line);
                 crb.InsertCarrier(carrierBuy);
                 cb.UpdateAddCredits(cmdr.Name, -carrierBuy.Price);
-                carrierID = carrierBuy.CarrierID;
+                logFC = carrierBuy.CarrierID;
                 cbxCarrier.Items.Add(carrierBuy.Callsign +
                 " (" + carrierBuy.CarrierID.ToString() + ")");
             }
@@ -993,7 +1123,8 @@ namespace ED_Systems_v2
             if (line.IndexOf("\"event\":\"CarrierStats\"") >= 0)
             {
                 carrierStats = JsonConvert.DeserializeObject<CarrierStats>(line);
-                dt = crb.SelectCarrier(carrierStats.CarrierID);
+                logFC = carrierStats.CarrierID;
+                dt = crb.SelectCarrier(logFC);
                 if (dt.Rows.Count == 0)
                 {
                     crb.InsertCarrier(carrierStats);//add
@@ -1002,7 +1133,6 @@ namespace ED_Systems_v2
                         " (" + carrierStats.CarrierID.ToString() + ")");
                 }
                 else crb.UpdateCarreerStats(carrierStats);    //update
-                carrierID = carrierStats.CarrierID;
             }
             //"event":"CarrierBankTransfer"
             if (line.IndexOf("\"event\":\"CarrierBankTransfer\"") >= 0)
@@ -1015,25 +1145,24 @@ namespace ED_Systems_v2
             if (line.IndexOf("\"event\":\"CarrierJumpRequest\"") >= 0)
             {
                 carrierJumpRequest = JsonConvert.DeserializeObject<CarrierJumpRequest>(line);
-                oldFCSysAddr = Properties.Settings.Default.LastKeyFC;
+                oldFCSysAddr = fcLastKey;
                 dt = lb.SelectSystemByKey(carrierJumpRequest.SystemAddress);
                 if (dt.Rows.Count != 0)
                 {
-                    notVisited = false;
+                    visited = true;
                     fcx = Convert.ToDouble(dt.Rows[0]["X"]);
                     fcy = Convert.ToDouble(dt.Rows[0]["Y"]);
                     fcz = Convert.ToDouble(dt.Rows[0]["Z"]);
                 }
                 else
                 {
-                    notVisited = true;
+                    visited = false;
                 }
-                Properties.Settings.Default.LastKeyFC = carrierJumpRequest.SystemAddress;
-                Properties.Settings.Default.Save();
+                fcLastKey = carrierJumpRequest.SystemAddress;
                 dt = crb.SelectCarrier(carrierJumpRequest.CarrierID);
                 oldFCSysName = dt.Rows[0]["system"].ToString();
                 oldFCSysBody = dt.Rows[0]["body"].ToString();
-                crb.UpdateCurrent(carrierJumpRequest.CarrierID, carrierJumpRequest.SystemName, carrierJumpRequest.Body);
+                crb.UpdateCurrent(carrierJumpRequest.CarrierID, carrierJumpRequest.SystemName, carrierJumpRequest.Body, fcLastKey, visited);
     
             }
             //"event":"CarrierJumpCancelled"
@@ -1043,18 +1172,17 @@ namespace ED_Systems_v2
                 dt = lb.SelectSystemByKey(oldFCSysAddr);
                 if (dt.Rows.Count != 0)
                 {
-                    notVisited = false;
+                    visited = true;
                     fcx = Convert.ToDouble(dt.Rows[0]["X"]);
                     fcy = Convert.ToDouble(dt.Rows[0]["Y"]);
                     fcz = Convert.ToDouble(dt.Rows[0]["Z"]);
                 }
                 else
                 {
-                    notVisited = true;
+                    visited = false;
                 }
-                crb.UpdateCurrent(carrierJumpCancelled.CarrierID, oldFCSysName, oldFCSysBody);
-                Properties.Settings.Default.LastKeyFC = oldFCSysAddr;
-                Properties.Settings.Default.Save();
+                fcLastKey = oldFCSysAddr;
+                crb.UpdateCurrent(carrierJumpCancelled.CarrierID, oldFCSysName, oldFCSysBody, fcLastKey, visited);
             }
             //"event":"CargoTransfer"
             if (line.IndexOf("\"event\":\"CargoTransfer\"") >= 0)
@@ -1072,7 +1200,27 @@ namespace ED_Systems_v2
                     }
                 }
             }
+            //"event":"Screenshot"
+            if (line.IndexOf("\"event\":\"Screenshot\"") >= 0 && 
+                tbxScreenFrom.Text != "" &&
+                tbxScreenTo.Text != "")
+            {
+                screenshot = JsonConvert.DeserializeObject<Screenshot>(line);
+                int ind = screenshot.Filename.LastIndexOf(@"\");
+                string file = screenshot.Filename.Substring(ind + 1);
+                if(File.Exists(tbxScreenFrom.Text + @"\" + file))
+                {
+                    Bitmap bmp = new Bitmap(tbxScreenFrom.Text + @"\" + file);
+                    string newFile = screenshot.Body + " " + screenshot.timestamp.ToString("(dd-MM-yy HH-mm-ss)") + ".png";
+                    bmp.Save(tbxScreenTo.Text + @"\" + newFile);
+                    lblScreenName.Text = newFile;
+                    pbxScreenshot.Image = bmp;
+                    //screens.Add(tbxScreenFrom.Text + @"\" + file);
+                }
+            }
+
             Application.DoEvents();
+            
             return timestamp;
         }
         private void LoadSystems(string filter = "")
@@ -1084,27 +1232,27 @@ namespace ED_Systems_v2
             loadingData = true;
             if (filter == "") //no filter
             {
-                dbt.systems = lb.SelectSystems(cx, cy, cz, Properties.Settings.Default.MaxRadius);
+                dbt.systems = lb.SelectSystems(cx, cy, cz, maxRadius);
                 if (LocalBaseExeption()) return;
             }
             else if(rbRaw.Checked) //filter on raw
             {
-                dbt.systems = lb.SelectSystemsByRaw(cx, cy, cz, Properties.Settings.Default.MaxRadius, filter);
+                dbt.systems = lb.SelectSystemsByRaw(cx, cy, cz, maxRadius, filter);
                 if (LocalBaseExeption()) return;
             }
             else if(rbMinerals.Checked)//filter on minerals
             {
-                dbt.systems = lb.SelectSystemsByMineral(cx, cy, cz, Properties.Settings.Default.MaxRadius, filter);
+                dbt.systems = lb.SelectSystemsByMineral(cx, cy, cz, maxRadius, filter);
                 if (LocalBaseExeption()) return;
             }
             else if(rbRings.Checked)//filter on rings
             {
-                dbt.systems = lb.SelectSystemsByRing(cx, cy, cz, Properties.Settings.Default.MaxRadius, filter);
+                dbt.systems = lb.SelectSystemsByRing(cx, cy, cz, maxRadius, filter);
                 if (LocalBaseExeption()) return;
             }
             else
             {
-                dbt.systems = lb.SelectSystemsByBody(cx, cy, cz, Properties.Settings.Default.MaxRadius, filter);
+                dbt.systems = lb.SelectSystemsByBody(cx, cy, cz, maxRadius, filter);
                 if (LocalBaseExeption()) return;
             }
             if(dbt.systems.Rows.Count == 0)
@@ -1127,13 +1275,13 @@ namespace ED_Systems_v2
                 dy = Convert.ToDouble(row["Y"]) - cy;
                 dz = Convert.ToDouble(row["Z"]) - cz;
                 row["Distance"] = Math.Round(Math.Sqrt(dx * dx + dy * dy + dz * dz), 2);
-                if (notVisited)
+                if (!visited)
                 {
                     row["FCDistance"] = 0;
                 }
                 else
                 {
-                    if (Properties.Settings.Default.LastKeyFC != 0)
+                    if (fcLastKey != 0)
                     {
                         dx = Convert.ToDouble(row["X"]) - fcx;
                         dy = Convert.ToDouble(row["Y"]) - fcy;
@@ -1147,20 +1295,20 @@ namespace ED_Systems_v2
             dgvSystems.CurrentCell = dgvSystems.Rows[0].Cells["dgvsName"];
             dgvSystems.Update();
             systemsRowIndex = dgvSystems.CurrentRow.Index;
-            lblSystems.Text = "Систем " + dbt.systems.Rows.Count.ToString() + ". Радиус поиска " + 
-                Properties.Settings.Default.MaxRadius.ToString() + " св.л.";
+            lblSystems.Text = "Систем " + dbt.systems.Rows.Count.ToString() + ". Радиус поиска " +
+                maxRadius.ToString() + " св.л.";
 
             //distance from Sol
             double dfs = Math.Round(Math.Sqrt(cx * cx + cy * cy + cz * cz), 2);
             
             lblDistance.Text = "Текущие расстояния: от Sol " + dfs.ToString() + " св.л.; ";
-            if (notVisited)
+            if (!visited)
             {
                 lblDistance.Text = lblDistance.Text + "от носителя (неизвестно); ";
             }
             else
             {
-                if (Properties.Settings.Default.LastKeyFC != 0)
+                if (fcLastKey != 0)
                 {
                     //distance from carrier
                     dx = cx - fcx;
@@ -1333,10 +1481,14 @@ namespace ED_Systems_v2
             {
                 return;
             }
-            string name = cbxCMDR.SelectedItem.ToString();
+            cmdrName = cbxCMDR.SelectedItem.ToString();
             DataTable dt;
             DataTable info;
-            dt = cb.SelectStatus(name);
+            dt = cb.SelectCMDRByName(cmdrName);
+            cmdrLastKey = Convert.ToUInt64(dt.Rows[0]["syskey"]);
+            cmdrLastName = dt.Rows[0]["sysname"].ToString();
+
+            dt = cb.SelectStatus(cmdrName);
             if (dt.Rows.Count > 0)
             {
                 lblCredits.Text = String.Format("Баланс: {0:### ### ### ### ##0} Cr",
@@ -1405,7 +1557,7 @@ namespace ED_Systems_v2
             }
             //materials
             DataRow foundRow;
-            dt = cb.SelectMaterials(name);
+            dt = cb.SelectMaterials(cmdrName);
             if (dt.Rows.Count > 0)
             {
                 foreach(DataRow row in dbt.craw.Rows)
@@ -1493,11 +1645,13 @@ namespace ED_Systems_v2
             string s = cbxCarrier.SelectedItem.ToString();
             int index = s.LastIndexOf("(");
             s = s.Substring(index + 1, s.Length - index - 2);
-            long id = Convert.ToInt64(s);
+            carrierID = Convert.ToInt64(s);
 
-            dt = crb.SelectCarrier(id);
+            dt = crb.SelectCarrier(carrierID);
             if (CarrierBaseExeption()) return;
             if (dt.Rows.Count == 0) return;
+            fcLastKey = Convert.ToUInt64(dt.Rows[0]["syskey"]);
+            visited = Convert.ToBoolean(dt.Rows[0]["visited"]);
             lblCurrentCurrierSystem.Text = "Местонахождение: " + dt.Rows[0]["system"].ToString();
             string body = dt.Rows[0]["body"].ToString();
             if(body != "")
@@ -1505,19 +1659,19 @@ namespace ED_Systems_v2
                 body = body.Replace(dt.Rows[0]["system"].ToString(), "").Trim();
                 lblCurrentCurrierSystem.Text = lblCurrentCurrierSystem.Text + " (Планета: " + body + ")";
             }
-            if (notVisited)
+            if (!visited)
             {
                 lblCurrentCurrierSystem.Text = lblCurrentCurrierSystem.Text + " не посещалась";
             }
 
-            dt = crb.SelectFinance(id);
+            dt = crb.SelectFinance(carrierID);
             if (CarrierBaseExeption()) return;
             if (dt.Rows.Count == 0) return;
             lblBalanceI.Text =   String.Format("{0:### ### ### ### ##0} Cr", dt.Rows[0]["balance"]);
             lblReserveI.Text =   String.Format("{0:### ### ### ### ##0} Cr", dt.Rows[0]["reserve"]);
             lblAvaikableI.Text = String.Format("{0:### ### ### ### ##0} Cr", dt.Rows[0]["available"]);
 
-            dt = crb.SelectSpace(id);
+            dt = crb.SelectSpace(carrierID);
             if (CarrierBaseExeption()) return;
             if (dt.Rows.Count == 0) return;
             lblTotalI.Text = dt.Rows[0]["total"].ToString() + " т.";
@@ -1528,14 +1682,14 @@ namespace ED_Systems_v2
             lblModulePaksI.Text = dt.Rows[0]["modulepaks"].ToString() + " т.";
             lblFreeI.Text = dt.Rows[0]["free"].ToString() + " т.";
 
-            dt = crb.SelectStats(id);
+            dt = crb.SelectStats(carrierID);
             if (CarrierBaseExeption()) return;
             if (dt.Rows.Count == 0) return;
             lblFuelI.Text = dt.Rows[0]["fuel"].ToString() + " т.";
             LblJumpI.Text = dt.Rows[0]["range"].ToString() + " св.л.";
             lblMaxJumpI.Text = dt.Rows[0]["rangemax"].ToString() + " св.л.";
 
-            dt = crb.SelectCrew(id);
+            dt = crb.SelectCrew(carrierID);
             if (CarrierBaseExeption()) return;
             if (dt.Rows.Count == 0) return;
             try
@@ -1645,22 +1799,38 @@ namespace ED_Systems_v2
                 MessageBox.Show(ex.Message);
             }
             //cargo
-            dt = crb.SelectCargo(id);
+            dt = crb.SelectCargo(carrierID);
             if (CarrierBaseExeption()) return;
             dgvCargo.DataSource = dt;
 
         }
         private void BkgReadLog(string path)
         {
+            bool newData = false;
+            readLogTimer.Stop();
             toolStripStatusLastLog.BackColor = Color.Red;
             toolStripStatusLastLog.ForeColor = Color.White;
-            readingLog = true;
-            fswFile.EnableRaisingEvents = false;
-            gb = new GlobalBase();
+            
+            //fswFile.EnableRaisingEvents = false;
+            gb = new GlobalBase(host, db, port, user, pwd);
             List<string> fileLines = new List<string>();
+            StreamReader stream;
 
-            FileInfo log = new FileInfo(path);
-            StreamReader stream = new StreamReader(log.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+            
+            try
+            {
+                FileInfo log = new FileInfo(path);
+                stream = new StreamReader(log.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+            }
+            catch(Exception ex)
+            {
+                chkEnableBkgRead.Checked = false;
+                toolStripStatusLastLog.BackColor = Color.Green;
+                toolStripStatusLastLog.ForeColor = Color.White;
+                MessageBox.Show("Ошибка чтения лога:\r\n" + ex.Message);
+                return;
+            }
+            
             while (!stream.EndOfStream)
             {
                 fileLines.Add(stream.ReadLine());
@@ -1668,9 +1838,10 @@ namespace ED_Systems_v2
             stream.Close();
             if(fileLines.Count == 0) return;
             int lastFileLine = fileLines.Count - 1;
-            for (int i = lastReadLine + 1; i <= lastFileLine; i++)
+            for (int i = bkgLastLine + 1; i <= lastFileLine; i++)
             {
-                timestamp = SaveEvent(fileLines[i]);
+                newData = true;
+                lastTime = SaveEvent(fileLines[i]);
                 if (gb.connected && GlobalBaseExeption())
                 {
                     gb.connected = false;
@@ -1678,7 +1849,7 @@ namespace ED_Systems_v2
                 if (LocalBaseExeption() || CMDRBaseExeption() || CarrierBaseExeption())
                 {
                     chkEnableBkgRead.Checked = false;
-                    readingLog = false;
+                    readLogTimer.Start();
                     return;
                 }
                 tbxBkgReadLog.Text = tbxBkgReadLog.Text + i.ToString() + 
@@ -1686,17 +1857,22 @@ namespace ED_Systems_v2
                 tbxBkgReadLog.SelectionStart = tbxBkgReadLog.Text.Length;
                 tbxBkgReadLog.ScrollToCaret();
                 tbxBkgReadLog.Refresh();
+                bkgLastLine++;
+                ib.UpdateBkgLastLine(bkgLastLine);
+                ib.UpdateLastTimestamp(lastTime);
             }
-            lastReadLine = lastFileLine;
-            Properties.Settings.Default.LastTS = timestamp;
-            Properties.Settings.Default.Save();
-            ApplyFilter();
-            LoadCMDRData();
-            LoadCarrierData();
-            readingLog = false;
-            fswFile.EnableRaisingEvents = true;
+            //lastReadLine = lastFileLine;
+            if (newData)
+            {
+                LoadCMDRData();
+                LoadCarrierData();
+                ApplyFilter();
+            }
+            
+            //fswFile.EnableRaisingEvents = true;
             toolStripStatusLastLog.BackColor = Color.Green;
             toolStripStatusLastLog.ForeColor = Color.White;
+            readLogTimer.Start();
         }
 
 
@@ -1706,15 +1882,18 @@ namespace ED_Systems_v2
             FolderBrowserDialog fbd = new FolderBrowserDialog();
             if (fbd.ShowDialog() == DialogResult.OK)
             {
-                Properties.Settings.Default.LogPath = fbd.SelectedPath;
-                Properties.Settings.Default.BkgLastLine = -1;
-                lastReadLine = -1;
-                Properties.Settings.Default.Save();
+                logPath = fbd.SelectedPath;
+                bkgLastLine = -1;
+                ib.UpdateLogPath(logPath);
+                ib.UpdateBkgLastLine(bkgLastLine);
+
+                toolStripStatusLogPath.Text = fbd.SelectedPath;
                 //watches
-                fswDir.Path = Properties.Settings.Default.LogPath;
-                fswFile.Path = Properties.Settings.Default.LogPath;
+                fswDir.Path = logPath;
+                //fswFile.Path = Properties.Settings.Default.LogPath;
                 fswDir.EnableRaisingEvents = true;
-                fswFile.EnableRaisingEvents = true;
+                //fswFile.EnableRaisingEvents = true;
+                if(bkgRead) readLogTimer.Start();
             }
         }
 
@@ -1724,7 +1903,7 @@ namespace ED_Systems_v2
 
             opf.Filter = "Journal.xxxxxxxxxxxx.xx.log|*.log";
             opf.Title = "Select log file";
-            opf.InitialDirectory = Properties.Settings.Default.LogPath;
+            opf.InitialDirectory = logPath;
             if (opf.ShowDialog() == DialogResult.OK)
             {
                 GetLogData(opf.FileName, opf.SafeFileName);
@@ -1774,7 +1953,7 @@ namespace ED_Systems_v2
 
         private void GetEDSMDataToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            gb = new GlobalBase();
+            gb = new GlobalBase(host, db, port, user, pwd);
             DataTable dt = new DataTable();
             EDSMInfo edsm = new EDSMInfo();
             string edsmRequest;
@@ -1942,18 +2121,19 @@ namespace ED_Systems_v2
         private void MaxDistanceToolStripMenuItem_Click(object sender, EventArgs e)
         {
             FormMaxDistanse setDist = new FormMaxDistanse();
-            setDist.maxDist = Properties.Settings.Default.MaxRadius;
+            setDist.maxDist = maxRadius;
             setDist.ShowDialog();
-            Properties.Settings.Default.MaxRadius = Convert.ToInt32(setDist.maxDist);
-            Properties.Settings.Default.Save();
+            maxRadius = Convert.ToInt32(setDist.maxDist);
+            ib.UpdateMaxRadius(maxRadius);
             ApplyFilter();
         }
 
         private void SetCurrentToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (dgvSystems.CurrentRow == null) return;
-            Properties.Settings.Default.LastKey = Convert.ToUInt64(dgvSystems.CurrentRow.Cells["dgvsSKey"].Value);
-            Properties.Settings.Default.Save();
+            cmdrLastKey = Convert.ToUInt64(dgvSystems.CurrentRow.Cells["dgvsSKey"].Value);
+            cmdrLastName = dgvSystems.CurrentRow.Cells["dgvsName"].Value.ToString();
+            cb.UpdateCMDR(cmdrName, cmdrLastKey, cmdrLastName);
             toolStripStatusCurrent.Text = dgvSystems.CurrentRow.Cells["dgvsName"].Value.ToString();
             cx = Convert.ToDouble(dgvSystems.CurrentRow.Cells["dgvsX"].Value);
             cy = Convert.ToDouble(dgvSystems.CurrentRow.Cells["dgvsY"].Value);
@@ -1988,6 +2168,8 @@ namespace ED_Systems_v2
 
         private void cbxCMDR_SelectedIndexChanged(object sender, EventArgs e)
         {
+            DataTable dt;
+
             LoadCMDRData();
         }
 
@@ -2072,12 +2254,13 @@ namespace ED_Systems_v2
 
         private void cbxCarrier_SelectedIndexChanged(object sender, EventArgs e)
         {
+
             LoadCarrierData();
         }
 
         private void toolStripStatusDonate_Click(object sender, EventArgs e)
         {
-            System.Diagnostics.Process.Start(Properties.Settings.Default.DonateAddr);
+            System.Diagnostics.Process.Start(donateAddr);
         }
 
         private void dgvCargo_CellEndEdit(object sender, DataGridViewCellEventArgs e)
@@ -2096,14 +2279,22 @@ namespace ED_Systems_v2
         {
             if (chkEnableBkgRead.Checked)
             {
+                if (logPath == "")
+                {
+                    MessageBox.Show("Не задан каталог логов");
+                    return;
+                }
+                readLogTimer.Start();
                 toolStripStatusLastLog.BackColor = Color.Green;
                 toolStripStatusLastLog.ForeColor = Color.White;
             }
             else
             {
+                readLogTimer.Stop();
                 toolStripStatusLastLog.BackColor = SystemColors.Control;
                 toolStripStatusLastLog.ForeColor = SystemColors.ControlText;
             }
+            ib.UpdateBkgRead(chkEnableBkgRead.Checked);
         }
 
         private void fswDir_Created(object sender, FileSystemEventArgs e)
@@ -2112,20 +2303,10 @@ namespace ED_Systems_v2
             {
                 tbxBkgReadLog.Text = "Найден лог " + e.Name + System.Environment.NewLine;
                 toolStripStatusLastLog.Text = e.Name;
-                fswFile.Filter = e.Name;
-                Properties.Settings.Default.LastLog = e.Name;
-                Properties.Settings.Default.BkgLastLine = -1;
-                Properties.Settings.Default.Save();
-                lastReadLine = -1;
-            }
-        }
-
-        private void fswFile_Changed(object sender, FileSystemEventArgs e)
-        {
-            if (chkEnableBkgRead.Checked)
-            {
-                if (readingLog) return;
-                BkgReadLog(e.FullPath);
+                lastLog = e.Name;
+                bkgLastLine = -1;
+                ib.UpdateLastLog(lastLog);
+                ib.UpdateBkgLastLine(bkgLastLine);
             }
         }
 
@@ -2229,6 +2410,145 @@ namespace ED_Systems_v2
                 dgvCmdrManuf.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.Green;
                 dgvCmdrManuf.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.White;
             }
+        }
+
+        private void btnScreenFrom_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() == DialogResult.OK)
+            {
+                tbxScreenFrom.Text = fbd.SelectedPath;
+                fromPath = fbd.SelectedPath;
+                ib.UpdateFromImgPath(fromPath);
+            }
+        }
+
+        private void btnScreenTo_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() == DialogResult.OK)
+            {
+                tbxScreenTo.Text = fbd.SelectedPath;
+                toPath = fbd.SelectedPath;
+                ib.UpdateToImgPath(toPath);
+            }
+        }
+
+        private void btnBackupPath_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() == DialogResult.OK)
+            {
+                tbxBackup.Text = fbd.SelectedPath;
+                bakPath = fbd.SelectedPath;
+                ib.UpdateBackupPath(bakPath);
+            }
+        }
+
+        private void btnBackup_Click(object sender, EventArgs e)
+        {
+            if (tbxBackup.Text == "") return;
+            DirCopy(logPath, bakPath, DateTime.Now);
+        }
+
+        private void FileCopy(string from, string to, DateTime dt)
+        {
+            long sizeFrom;
+            long sizeTo;
+            FileInfo infoFrom;
+            FileInfo infoTo;
+            int ind;
+            string fileName;
+
+            ind = from.LastIndexOf(@"\");
+            fileName = from.Substring(ind + 1);
+            to += "\\" + fileName;
+            if (File.Exists(to))
+            {
+                infoFrom = new FileInfo(from);
+                infoTo = new FileInfo(to);
+                sizeFrom = infoFrom.Length;
+                sizeTo = infoTo.Length;
+                if (sizeFrom != sizeTo)
+                {
+                    try
+                    {
+                        File.Copy(from, to, true);
+                        tbxBackupLog.Text += "Перезаписан файл " + fileName + " в "
+                           + dt.ToString()
+                           + Environment.NewLine;
+                    }
+                    catch (Exception ex)
+                    {
+                        tbxBackupLog.Text += "Ошибка в "
+                           + dt.ToString() + "(" + ex.Message + ")" + Environment.NewLine;
+                    }
+                }
+            }
+            else
+            {
+                try
+                {
+                    File.Copy(from, to, true);
+                    tbxBackupLog.Text += "Создан файл " + fileName + " в "
+                       + dt.ToString()
+                       + Environment.NewLine;
+                }
+                catch (Exception ex)
+                {
+                    tbxBackupLog.Text += "Ошибка в "
+                       + dt.ToString() + "(" + ex.Message + ")" + Environment.NewLine;
+                }
+            }
+        }
+
+        private void DirCopy(string from, string to, DateTime dt)
+        {
+            FileInfo[] files = null;
+            DirectoryInfo infoFrom;
+            DirectoryInfo[] subDir = null;
+            int ind;
+            string dir;
+            string sub;
+
+            infoFrom = new DirectoryInfo(from);
+            subDir = infoFrom.GetDirectories();
+            for (int i = 0; i < subDir.Length; i++)
+            {
+                sub = subDir[i].FullName;
+                ind = sub.LastIndexOf(@"\");
+                dir = to + "\\" + sub.Substring(ind + 1);
+                if (!Directory.Exists(dir))
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(dir);
+                        tbxBackupLog.Text  += "Создан каталог " + dir + " at "
+                        + dt.ToString()
+                        + Environment.NewLine;
+                    }
+                    catch (Exception ex)
+                    {
+                        tbxBackupLog.Text += "Ошибка в "
+                        + dt.ToString() + "(" + ex.Message + ")" + Environment.NewLine;
+                    }
+                }
+                Application.DoEvents();
+                this.DirCopy(sub, dir, dt);
+            }
+            files = infoFrom.GetFiles();
+            for (int i = 0; i < files.Length; i++)
+            {
+                FileCopy(files[i].FullName, to, dt);
+                Application.DoEvents();
+            }
+        }
+
+        private void readLogTimer_Tick(object sender, EventArgs e)
+        {
+            if(logPath != "" && lastLog != "")
+                BkgReadLog(logPath + @"\" + lastLog);
+            
         }
     }
 }

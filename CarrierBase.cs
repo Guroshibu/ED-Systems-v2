@@ -139,12 +139,12 @@ namespace ED_Systems_v2
         public void InsertCarrier(CarrierStats info)
         {
             exeption = "";
-            cmd.CommandText = @"INSERT INTO carriers (id, callsign, currentsystem)
-                                VALUES (@id, @callsign, @currentsystem)";
+            cmd.CommandText = @"INSERT INTO carriers (id, callsign, name)
+                                VALUES (@id, @callsign, @name)";
             cmd.Parameters.Clear();
             cmd.Parameters.Add("@id", DbType.Int64).Value = info.CarrierID;
             cmd.Parameters.Add("@callsign", DbType.String).Value = info.Callsign;
-            cmd.Parameters.Add("@currentsystem", DbType.String).Value = "";
+            cmd.Parameters.Add("@name", DbType.String).Value = info.Name;
             try
             {
                 cmd.ExecuteNonQuery();
@@ -346,17 +346,40 @@ namespace ED_Systems_v2
                 }
             }
         }
-        public void UpdateCurrent(Int64 id, string name, string body)
+        public void UpdateCurrent(Int64 id, string name, string body, UInt64 syskey, bool visited)
         {
             exeption = "";
             cmd.CommandText = @"UPDATE carriers
                                 SET system = @system,
-                                    body = @body
+                                    body = @body,
+                                    syskey = @syskey,
+                                    visited = @visited
                                 WHERE id = @id";
             cmd.Parameters.Clear();
             cmd.Parameters.Add("@id", DbType.Int64).Value = id;
             cmd.Parameters.Add("@system", DbType.String).Value = name;
             cmd.Parameters.Add("@body", DbType.String).Value = body;
+            cmd.Parameters.Add("@syskey", DbType.Int64).Value = syskey;
+            cmd.Parameters.Add("@visited", DbType.Boolean).Value = visited;
+
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
+        public void UpdateVisited(long id, bool visited)
+        {
+            exeption = "";
+            cmd.CommandText = @"UPDATE carriers
+                                SET visited = @visited
+                                WHERE id = @id";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@id", DbType.Int64).Value = id;
+            cmd.Parameters.Add("@visited", DbType.Boolean).Value = visited;
 
             try
             {

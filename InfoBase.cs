@@ -247,5 +247,194 @@ namespace ED_Systems_v2
             }
             return dt;
         }
+        public DataTable SelectProgramSettings()
+        {
+            exeption = "";
+            dt = new DataTable();
+
+            cmd.CommandText = @"SELECT * FROM program_settings";
+            cmd.Parameters.Clear();
+            adapter = new SQLiteDataAdapter(cmd);
+            try
+            {
+                adapter.Fill(dt);
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+            return dt;
+        }
+        public DataTable SelectUserSettings()
+        {
+            exeption = "";
+            dt = new DataTable();
+
+            cmd.CommandText = @"SELECT * FROM user_settings";
+            cmd.Parameters.Clear();
+            adapter = new SQLiteDataAdapter(cmd);
+            try
+            {
+                adapter.Fill(dt);
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+            return dt;
+        }
+        public void UpdateLogPath(string path)
+        {
+            exeption = "";
+            cmd.CommandText = @"UPDATE user_settings
+                                SET LogPath = @LogPath
+                                WHERE rowid = 1";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@LogPath", DbType.String).Value = path;
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
+        public void UpdateLastLog(string path)
+        {
+            exeption = "";
+            cmd.CommandText = @"UPDATE user_settings
+                                SET LastLog = @LastLog
+                                WHERE rowid = 1";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@LastLog", DbType.String).Value = path;
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
+        public void UpdateFromImgPath(string path)
+        {
+            exeption = "";
+            cmd.CommandText = @"UPDATE user_settings
+                                SET FromImgPath = @FromImgPath
+                                WHERE rowid = 1";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@FromImgPath", DbType.String).Value = path;
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
+        public void UpdateToImgPath(string path)
+        {
+            exeption = "";
+            cmd.CommandText = @"UPDATE user_settings
+                                SET ToImgPath = @ToImgPath
+                                WHERE rowid = 1";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@ToImgPath", DbType.String).Value = path;
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
+        public void UpdateBackupPath(string path)
+        {
+            exeption = "";
+            cmd.CommandText = @"UPDATE user_settings
+                                SET BackupPath = @BackupPath
+                                WHERE rowid = 1";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@BackupPath", DbType.String).Value = path;
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
+        public void UpdateMaxRadius(int value)
+        {
+            exeption = "";
+            cmd.CommandText = @"UPDATE user_settings
+                                SET MaxRadius = @MaxRadius
+                                WHERE rowid = 1";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@MaxRadius", DbType.Int32).Value = value;
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
+        public void UpdateBkgLastLine(int value)
+        {
+            exeption = "";
+            cmd.CommandText = @"UPDATE user_settings
+                                SET BkgLastLine = @BkgLastLine
+                                WHERE rowid = 1";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@BkgLastLine", DbType.Int32).Value = value;
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
+        public void UpdateLastTimestamp(ulong value)
+        {
+            exeption = "";
+            cmd.CommandText = @"UPDATE user_settings
+                                SET LastTimestamp = @LastTimestamp
+                                WHERE rowid = 1";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@LastTimestamp", DbType.UInt64).Value = value;
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
+        public void UpdateBkgRead(bool value)
+        {
+            exeption = "";
+            cmd.CommandText = @"UPDATE user_settings
+                                SET BkgRead = @BkgRead
+                                WHERE rowid = 1";
+            cmd.Parameters.Clear();
+            cmd.Parameters.Add("@BkgRead", DbType.Boolean).Value = value;
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                exeption = ex.Message + Environment.NewLine + cmd.CommandText;
+            }
+        }
     }
 }

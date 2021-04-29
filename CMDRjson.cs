@@ -415,6 +415,14 @@ namespace ED_Systems_v2
         public string Name_Localised { get; set; } = "";
         public int Count { get; set; } = 0;
     }
+    public class MaterialsReward
+    {
+        public string Name { get; set; }
+        public string Name_Localised { get; set; }
+        public string Category { get; set; }
+        public string Category_Localised { get; set; }
+        public int Count { get; set; }
+    }
 
     public class Effect
     {
@@ -446,11 +454,16 @@ namespace ED_Systems_v2
         public string Faction { get; set; } = "";
         public string Name { get; set; } = "";
         public int MissionID { get; set; } = 0;
+        public string Commodity { get; set; } = "";
+        public string Commodity_Localised { get; set; } = "";
+        public int Count { get; set; } = 0;
+        public string NewDestinationSystem { get; set; } = "";
         public string TargetFaction { get; set; } = "";
         public string DestinationSystem { get; set; } = "";
         public string DestinationStation { get; set; } = "";
         public Int64 Reward { get; set; } = 0;
         public List<CommodityReward> CommodityReward { get; set; } = new List<CommodityReward>();
+        public List<MaterialsReward> MaterialsReward { get; set; } = new List<MaterialsReward>();
         public List<FactionEffect> FactionEffects { get; set; } = new List<FactionEffect>();
     }
 
